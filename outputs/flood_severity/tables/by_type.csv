@@ -1,0 +1,3 @@
+bin,events,pct_with_damage,mean_damage,median_damage_if_damaged,total_damage_M,deaths,injuries,deaths_per_1000_events,share_of_events_pct,share_of_damage_pct,share_of_deaths_pct
+Flash Flood,73431,35.847,1249780.512,16503.734,91772.633,1404,632,19.12,60.803,70.146,74.246
+Flood,47337,28.5,825129.656,20122.165,39059.163,487,249,10.288,39.197,29.854,25.754
