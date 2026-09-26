@@ -1,15 +1,3 @@
-"""Join nominal flood_final.csv to NRI v1.20 and express USD in August 2026 prices.
-
-Run: python scripts/combine_flood_nri.py
-Only Python's standard library is required. The existing CPI implementation is reused.
-
-Grains: one row/event; one row/NRI county/hazard; one row/observed county/year/category.
-The full NRI table is authoritative. Cleaned is reconciled, never joined as extra rows.
-FEMA's December 2025 metadata specifies December 2024 dollars for this NRI release:
-https://www.arcgis.com/home/item.html?id=1cb56c682f6f4ce08a07ff372a7908b0
-https://www.fema.gov/sites/default/files/documents/fema_national-risk-index_technical-documentation.pdf
-"""
-
 from __future__ import annotations
 
 import argparse
