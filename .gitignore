@@ -181,4 +181,5 @@ cython_debug/
 .cursorindexingignore
 
 data/raw_data/
-docs/
+AGENTS.md
+/docs/agents
