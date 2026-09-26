@@ -1,7 +1,7 @@
-"""仅清洗 NOAA Storm Events 中精确匹配 EVENT_TYPE == 'Flood' 的记录。
+"""清洗 NOAA Storm Events 中四类洪水事件，保持原有输出文件名。
 
 分步目标：
-1. 按年份选择最新的三表快照，筛选 Flood，检查事件标识与重复冲突。
+1. 按年份选择最新的三表快照，筛选四类洪水，检查事件标识与重复冲突。
 2. 标准化时间、伤亡、金额、地理编码；保留原值并标记未知/异常。
 3. 用 EVENT_ID 筛选死亡和位置子表，独立去重、汇总，避免多对多膨胀。
 4. 将子表汇总到事件，按年份输出 flood_1996.csv 至 flood_2026.csv。
@@ -15,11 +15,12 @@
 --dry-run 执行全部读取和转换，仅向终端报告，不创建任何输出文件。
 默认输出 data/processed_data 中 31 个年度 CSV 和 flood_1996_2026.csv；
 合并使用 1 GiB 的操作性体积上限（不是 CSV 格式本身的限制）。
-即使某年没有有效 Flood，
+即使某年没有有效洪水事件，
 也输出相同表头的空文件。运行摘要仅写到终端，不另建报告或中间数据。
 正常运行拒绝覆盖已有输出目录，全部成功后才交付结果目录。
 
-规则：不纳入 Flash Flood / Coastal Flood；空白数值不是零；金额单位为
+规则：精确匹配 Flash Flood / Flood / Coastal Flood / Lakeshore Flood；
+空白数值不是零；金额单位为
 名义美元，不进行通胀调整；县 FIPS 是待外部地理表验证的候选编码。
 无法可靠解析的可选值置空并标记，不用推测替代。标识冲突、必要时间或
 区域编码异常的事件仍保留，但 core_fields_valid=0，供建模时筛除。
@@ -34,6 +35,7 @@ location_points 为 [[纬度, 经度], ...] 的 JSON；优先用 locations 子�
 有效坐标，缺失时用 details 的有效起止点，不推测中心点或受灾面积。
 fatality_records 为保留的死亡明细数量，不替代主表伤亡人数。
 event_id 为一行的唯一标识；episode_id 保留用于同一天气过程分组。
+event_type 保留 NOAA 原始灾种名称，区分四类洪水事件。
 year 为来源年度文件年份，可能与跨年事件的开始年份不同。
 """
 
@@ -54,6 +56,7 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
+SELECTED_EVENT_TYPES = frozenset({"Flash Flood", "Flood", "Coastal Flood", "Lakeshore Flood"})
 FILE_PATTERN = re.compile(
     r"StormEvents_(details|fatalities|locations)-ftp_v1\.0_d(\d{4})_c(\d{8})\.csv"
 )
@@ -74,7 +77,7 @@ US_STATE_CODES = {
     42, 44, 45, 46, 47, 48, 49, 50, 51, 53, 54, 55, 56, 60, 66, 69, 72, 78,
 }
 OUTPUT_FIELDS = (
-    "event_id", "episode_id", "year", "begin_time_local", "end_time_local", "timezone",
+    "event_id", "episode_id", "event_type", "year", "begin_time_local", "end_time_local", "timezone",
     "duration_hours", "state_fips", "county_fips", "area_type", "area_code", "area_name",
     "injuries_direct", "injuries_indirect", "deaths_direct", "deaths_indirect",
     "damage_property_usd", "damage_crops_usd", "flood_cause", "fatality_records",
@@ -202,7 +205,7 @@ def read_records(path: Path, kind: str, year: int):
             if None in raw or any(value is None for value in raw.values()):
                 raise ValueError(f"Column count mismatch: {path.name}:{start_line}")
             record = Record(raw, path.name, start_line, year)
-            if kind != "details" or raw["EVENT_TYPE"] == "Flood":
+            if kind != "details" or raw["EVENT_TYPE"] in SELECTED_EVENT_TYPES:
                 try:
                     list(csv.reader(io.StringIO("".join(lines)), strict=True))
                 except csv.Error:
@@ -244,7 +247,7 @@ def select_flood(files: dict, quarantine: list, counters: Counter) -> tuple[list
             ym = record.raw["BEGIN_YEARMONTH"].strip()
             if re.fullmatch(r"\d{6}", ym) and int(ym[:4]) == year and 1 <= int(ym[4:]) <= 12:
                 observed_months[year].add(int(ym[4:]))
-            if record.raw["EVENT_TYPE"] == "Flood":
+            if record.raw["EVENT_TYPE"] in SELECTED_EVENT_TYPES:
                 selected.append(record)
                 counters["flood_rows_selected"] += 1
     return unique_records(selected, ("EVENT_ID",), "details", quarantine, counters), observed_months
@@ -273,7 +276,7 @@ def normalize_events(events: list[Record], observed_months: dict) -> None:
                       if begin and end and end >= begin else None,
                       event_year=begin.year if begin else None,
                       event_month=begin.month if begin else None,
-                      timezone=timezone, event_type="Flood")
+                      timezone=timezone, event_type=raw["EVENT_TYPE"])
         # Do not invent UTC offsets for historical abbreviations or apply DST rules.
         issues.append("timezone_not_normalized_to_utc")
         state = integer(raw["STATE_FIPS"], positive=True)
@@ -458,7 +461,7 @@ def run(input_dir: Path, output_dir: Path, start_year: int, end_year: int,
     files, superseded = discover(input_dir, start_year, end_year)
     quarantine, counters = [], Counter()
     events, observed_months = select_flood(files, quarantine, counters)
-    print("[2/5] Normalize Flood events", file=sys.stderr)
+    print("[2/5] Normalize selected flood events", file=sys.stderr)
     normalize_events(events, observed_months)
     print("[3/5] Link fatalities and locations", file=sys.stderr)
     fatalities, locations = link_children(files, events, quarantine, counters)
@@ -469,7 +472,7 @@ def run(input_dir: Path, output_dir: Path, start_year: int, end_year: int,
             quarantine.append(("details", record, "invalid_core_fields"))
     flag_counts = Counter(flag for record in events for flag in set(record.issues))
     summary = {
-        "event_type": "Flood", "start_year": start_year, "end_year": end_year,
+        "event_types": sorted(SELECTED_EVENT_TYPES), "start_year": start_year, "end_year": end_year,
         "dry_run": dry_run, "input_dir": str(input_dir), "output_dir": str(output_dir),
         "selected_source_files": [path.name for path in files.values()],
         "superseded_source_files": superseded, "counts": dict(counters),
@@ -524,6 +527,7 @@ def main() -> int:
     except (ValueError, OSError, UnicodeError, csv.Error) as error:
         print(f"Cleaning failed: {error}", file=sys.stderr)
         return 1
+    print(f"Selected flood types: {', '.join(summary['event_types'])}")
     print(f"Flood events selected: {summary['counts']['flood_rows_selected']:,}")
     print(f"Output events: {summary['feature_rows']:,}; core fields valid: {summary['core_fields_valid_rows']:,}")
     print(f"Columns: {len(OUTPUT_FIELDS)}; files: {len(summary['output_files'])}")

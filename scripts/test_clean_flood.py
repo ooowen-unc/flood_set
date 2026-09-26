@@ -78,21 +78,28 @@ class FloodCleaningTests(unittest.TestCase):
         with (self.output / f"flood_{year}.csv").open(encoding="utf-8-sig", newline="") as stream:
             return list(csv.DictReader(stream))
 
-    def test_exact_flood_filter_and_no_join_multiplication(self):
-        self.sources(events=[event(DEATHS_DIRECT="2"), event("11", "Flash Flood"),
-                             event("12", "Coastal Flood")],
+    def test_four_flood_types_and_no_join_multiplication(self):
+        self.sources(events=[event(DEATHS_DIRECT="2"), event("11", "Flash Flood", DEATHS_DIRECT="1"),
+                             event("12", "Coastal Flood"), event("13", "Lakeshore Flood"),
+                             event("14", "Hail"), event("15", "Storm Surge/Tide")],
                      deaths=[death(), death("31"), death("32", EVENT_ID="11")],
                      locations=[location(), location("2", LATITUDE="39.4", LONGITUDE="-82.3"),
-                                location("3", LATITUDE="39.4", LONGITUDE="-82.3")])
+                                location("3", LATITUDE="39.4", LONGITUDE="-82.3"),
+                                location(EVENT_ID="12"), location(EVENT_ID="13")])
         summary = self.clean()
         rows = self.output_rows()
-        self.assertEqual(len(rows), 1)
+        self.assertEqual([row["event_id"] for row in rows], ["10", "11", "12", "13"])
+        self.assertEqual([row["event_type"] for row in rows],
+                         ["Flood", "Flash Flood", "Coastal Flood", "Lakeshore Flood"])
         self.assertEqual(rows[0]["event_id"], "10")
         self.assertEqual(rows[0]["damage_property_usd"], "5000.00")
         self.assertEqual(rows[0]["deaths_direct"], "2")
         self.assertEqual(rows[0]["fatality_records"], "2")
         self.assertEqual(json.loads(rows[0]["location_points"]), [[39.3, -82.2], [39.4, -82.3]])
-        self.assertEqual(summary["counts"]["flood_rows_selected"], 1)
+        self.assertEqual(rows[1]["fatality_records"], "1")
+        self.assertEqual(json.loads(rows[2]["location_points"]), [[39.3, -82.2]])
+        self.assertEqual(json.loads(rows[3]["location_points"]), [[39.3, -82.2]])
+        self.assertEqual(summary["counts"]["flood_rows_selected"], 4)
         self.assertNotIn("EVENT_NARRATIVE", rows[0])
 
     def test_unknown_amounts_remain_distinct_from_explicit_zero(self):
@@ -138,7 +145,7 @@ class FloodCleaningTests(unittest.TestCase):
         self.assertEqual((self.output / "flood_2026.csv").read_bytes(), original)
 
     def test_empty_year_header_and_latest_snapshot_and_zone_key(self):
-        self.sources(year=2025, events=[event("11", "Flash Flood", 2025)])
+        self.sources(year=2025, events=[event("11", "Hail", 2025)])
         self.sources(events=[event(CZ_TYPE="Z", CZ_FIPS="9")])
         self.write("details", 2026, [event("99")], event(), creation="20260101")
         self.clean(start=2025)
