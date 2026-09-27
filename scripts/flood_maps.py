@@ -1,23 +1,24 @@
 """
-Interactive county maps of flood property damage and flood level (Flood + Flash Flood; period taken from the events file).
+County maps of flood property damage and flood level (Flood + Flash Flood; period taken from the events file).
 
-Makes three HTML maps you can open in any browser (zoom, hover for details):
-    map1_damage_level.html   county colour = average yearly property damage, in six levels
-    map2_extreme_floods.html county colour = how many L5 Extreme floods (16+ counties) hit the county
-    map3_damage_by_year.html county colour = that year's damage, with a year slider / play button
-    map4_mitigation_gap.html county colour = priority counties vs counties that got FEMA flood-mitigation money
+Saves PNG images by default (small, easy to put in slides and the README):
+    map1_damage_level.png    county colour = average yearly property damage, in six levels
+    map2_extreme_floods.png  county colour = how many L5 Extreme floods (16+ counties) hit the county
+    map4_mitigation_gap.png  county colour = priority counties vs counties that got FEMA flood-mitigation money
                              (only if outputs/flood_mitigation/tables/county_mitigation.csv exists;
                               run scripts/flood_mitigation.py first)
+With --format html (or both) it also writes interactive HTML versions (zoom, hover for details),
+including map3_damage_by_year.html with a year slider. HTML files are large, so they are not kept in git.
 
 Flood level = counties hit by one flood episode (same definition as flood_damage_levels.py):
     L1 Local 1 | L2 Small 2-3 | L3 Medium 4-7 | L4 Large 8-15 | L5 Extreme 16+
 Darker blue always means more damage or more extreme floods.
 
-Needs:  pip3 install plotly pandas
+Needs:  pip3 install -U plotly kaleido pandas   (kaleido writes the PNGs; it uses the Chrome you already have)
         internet access the first run (downloads US county shapes, then caches them)
 Usage (from the repo root):
-        python3 scripts/flood_maps.py
-        open outputs/flood_maps/map1_damage_level.html
+        python3 scripts/flood_maps.py                  # PNGs
+        python3 scripts/flood_maps.py --format html    # interactive HTML maps
 """
 
 import argparse
@@ -40,6 +41,7 @@ SIX = ["#e4e3df", "#cde2fb", "#86b6ef", "#3987e5", "#1c5cab", "#0d366b"]
 BLUES = [[0.0, "#eef4fc"], [0.25, "#b7d3f6"], [0.5, "#5598e7"], [0.75, "#1c5cab"], [1.0, "#0d366b"]]
 DOLLARS = "Aug 2026 dollars"
 PERIOD, YEARS = "2007-2025", 19   # reset from the events file in prepare()
+FORMAT = "png"                    # set from --format in main()
 
 
 def money(v):
@@ -70,8 +72,12 @@ def prepare(events_path, nri_path=None):
         events=("EVENT_ID", "size"), damage=("damage_property", "sum"),
         deaths=("DEATHS_DIRECT", "sum"), worst_level=("level_num", "max"))
     if nri_path and os.path.exists(nri_path):
-        nri = pd.read_csv(nri_path, usecols=["STCOFIPS", "COUNTY", "STATEABBRV", "POPULATION", "SOVI_RATNG"])
-        nri["county_fips"] = nri["STCOFIPS"].astype(int).astype(str).str.zfill(5)
+        nri = pd.read_csv(nri_path, dtype=str, engine="python", on_bad_lines="skip")
+        nri.columns = nri.columns.str.strip().str.upper()
+        nri = nri[["STCOFIPS", "COUNTY", "STATEABBRV", "POPULATION", "SOVI_RATNG"]].dropna(subset=["STCOFIPS"])
+        nri["POPULATION"] = pd.to_numeric(nri["POPULATION"], errors="coerce")
+        nri["county_fips"] = pd.to_numeric(nri["STCOFIPS"], errors="coerce").dropna().astype(int).astype(str).str.zfill(5)
+        nri = nri.dropna(subset=["county_fips"])
         c = c.join(nri.set_index("county_fips")[["COUNTY", "STATEABBRV", "POPULATION", "SOVI_RATNG"]])
         c["name"] = c["COUNTY"].fillna(c["county"].str.title()) + ", " + c["STATEABBRV"].fillna(c["state"].str.title())
         c["vulnerability"] = c["SOVI_RATNG"].fillna("n/a")
@@ -115,6 +121,16 @@ def load_counties(cache):
     return json.loads(raw)
 
 
+def save(fig, out, html_only=False):
+    """Write fig as PNG and/or HTML depending on --format. out has no extension."""
+    if FORMAT in ("html", "both"):
+        fig.write_html(out + ".html", include_plotlyjs="cdn")
+        print(f"  wrote {out}.html")
+    if FORMAT in ("png", "both") and not html_only:
+        fig.write_image(out + ".png", width=1500, height=900, scale=2)
+        print(f"  wrote {out}.png")
+
+
 # ----------------------------------------------------------------------------- maps
 def log_colorbar(lo=3, hi=10):
     ticks = list(range(lo, hi + 1))
@@ -149,7 +165,7 @@ def map_total(px, c, geo, out):
     layout(fig, f"{n10} counties average $10M+ a year in flood damage",
            f"Flood + Flash Flood property damage per year, {PERIOD} ({DOLLARS}). Darker = more damage. "
            f"Top: " + ", ".join(f"{r.name} {money(r.damage)}" for r in top.itertuples()) + ".")
-    fig.write_html(out, include_plotlyjs="cdn")
+    save(fig, out)
 
 
 def map_level(px, c, geo, out):
@@ -167,7 +183,7 @@ def map_level(px, c, geo, out):
     layout(fig, f"{many} counties were caught in 7 or more extreme floods",
            f"Number of L5 Extreme flood episodes (one flood hitting 16+ counties) per county, {PERIOD}. "
            f"{hit:,} of {len(c):,} counties were hit at least once. Darker = more often.")
-    fig.write_html(out, include_plotlyjs="cdn")
+    save(fig, out)
 
 
 def map_years(px, y, geo, out):
@@ -182,7 +198,7 @@ def map_years(px, y, geo, out):
     layout(fig, "Flood property damage, year by year",
            f"Press play or drag the slider. County colour = that year's Flood + Flash Flood damage ({DOLLARS}); "
            f"blank = no recorded damage.")
-    fig.write_html(out, include_plotlyjs="cdn")
+    save(fig, out, html_only=True)   # an animation cannot be a PNG; see the GIF
 
 
 GAP_LEVELS = ["Priority: high damage, high vulnerability, <1¢ mitigation per $1",
@@ -217,7 +233,7 @@ def map_gap(px, m, geo, out):
     layout(fig, f"{n} hard-hit, vulnerable counties got almost no flood-mitigation money",
            f"Orange = top-25% flood damage {PERIOD}, High/Very high social vulnerability (NRI), and under 1¢ of FEMA "
            "flood mitigation per $1 of damage. Blue = got FEMA flood-mitigation money.")
-    fig.write_html(out, include_plotlyjs="cdn")
+    save(fig, out)
 
 
 def main():
@@ -227,7 +243,10 @@ def main():
     ap.add_argument("--out", default="outputs/flood_maps")
     ap.add_argument("--geo-cache", default="data/geo/geojson-counties-fips.json")
     ap.add_argument("--mitigation", default="outputs/flood_mitigation/tables/county_mitigation.csv")
+    ap.add_argument("--format", choices=("png", "html", "both"), default="png")
     args = ap.parse_args()
+    global FORMAT
+    FORMAT = args.format
 
     c, y = prepare(args.events, args.nri)
     os.makedirs(args.out, exist_ok=True)
@@ -236,14 +255,14 @@ def main():
 
     import plotly.express as px  # imported here so the data step can run without plotly
     geo = load_counties(args.geo_cache)
-    map_total(px, c, geo, os.path.join(args.out, "map1_damage_level.html"))
-    map_level(px, c, geo, os.path.join(args.out, "map2_extreme_floods.html"))
-    map_years(px, y, geo, os.path.join(args.out, "map3_damage_by_year.html"))
+    map_total(px, c, geo, os.path.join(args.out, "map1_damage_level"))
+    map_level(px, c, geo, os.path.join(args.out, "map2_extreme_floods"))
+    map_years(px, y, geo, os.path.join(args.out, "map3_damage_by_year"))
     if os.path.exists(args.mitigation):
-        map_gap(px, gap_table(args.mitigation), geo, os.path.join(args.out, "map4_mitigation_gap.html"))
+        map_gap(px, gap_table(args.mitigation), geo, os.path.join(args.out, "map4_mitigation_gap"))
     else:
         print(f"Skipped map4: {args.mitigation} not found (run scripts/flood_mitigation.py first)")
-    print(f"Done. Open the maps in {args.out}/ with a browser.")
+    print(f"Done. Maps are in {args.out}/")
 
 
 if __name__ == "__main__":

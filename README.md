@@ -46,6 +46,8 @@ All dollar figures are property damage in August 2026 dollars (CPI-U). Flood + F
 - Only **19%** of the smallest counties got a project, vs **79%** of the largest. The gap tracks capacity to apply (staff, engineering studies, matching funds).
 - **122 priority counties** combine top-25% flood damage, high social vulnerability, and under 1¢ of mitigation per $1 of damage. Examples: Tunica, MS ($1.5B damage, $0 mitigation), Inyo, CA ($664M, $0), Kerr, TX (118 flood deaths, $1.4M mitigation).
 
+![Priority counties vs counties that got FEMA flood-mitigation money](outputs/flood_maps/map4_mitigation_gap.png)
+
 **Model**
 - Recommending the top 2 mitigation measures for a county-year catches **84.5%** of the measures actually funded (frequency baseline: 81.9%); macro ROC-AUC **0.73** vs 0.50.
 - The funding model gives an 80% range for federal recovery funding that is **36% narrower** than the baseline at similar coverage (78.6% vs 79.4%).
@@ -59,7 +61,7 @@ All dollar figures are property damage in August 2026 dollars (CPI-U). Flood + F
 | Severity analysis | Damage and deaths by flood footprint, extent, depth, duration, and cause | `scripts/flood_damage_severity.py`, `scripts/flood_damage_levels.py` |
 | Vulnerability analysis | Flood deaths vs FEMA social vulnerability; NOAA recorded loss vs FEMA modelled loss | `scripts/flood_vulnerability.py`, `scripts/plot_flood_nri.py` |
 | Funding gap analysis | Who gets FEMA flood-mitigation money; 122 priority counties | `scripts/flood_mitigation.py` |
-| County maps | Interactive county maps (HTML), including the year-by-year map shown in the GIF above | `scripts/flood_maps.py` |
+| County maps | County maps as PNG (interactive HTML with `--format html`), plus the GIF above | `scripts/flood_maps.py` |
 | County risk lookup | Search a county and see its FEMA NRI flood risk level | `scripts/county_search_level.ipynb` |
 | Policy model | Predicts a federal funding range and ranks mitigation measures for a county, flood type, and impact level | `scripts/modeling/` |
 
