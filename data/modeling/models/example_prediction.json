@@ -1,0 +1,67 @@
+{
+  "input": {
+    "county_fips": "37155",
+    "flood_type": "Flash Flood",
+    "impact_level": 3,
+    "reference_year": 2025
+  },
+  "county_background": {
+    "county_name": "Robeson",
+    "nri_match_status": "matched",
+    "nri_snapshot_version": "December 2025",
+    "population_reference": "NRI static population snapshot; not a historical annual population estimate",
+    "static_values": {
+      "nri_population": 116414.0,
+      "nri_buildvalue": 20676381604.0,
+      "nri_agrivalue": 496647982.0,
+      "nri_area": 958.83774441,
+      "nri_sovi_score": 98.34605598,
+      "nri_resl_score": 14.090330788804073,
+      "nri_ifld_risks": 86.38676844783714,
+      "nri_ifld_afreq": 0.714285714285714
+    },
+    "prior_measure_context_year": 2024,
+    "prior_closed_projects_by_measure": {
+      "acquisition": 3.0,
+      "drainage": 0.0,
+      "elevation": 0.0,
+      "flood_control": 0.0
+    },
+    "prior_physical_flood_project_records": 3.0,
+    "prior_context_definition": "Closure year strictly BEFORE context year; project coverage counts, not verified facilities; activity counts are non-additive"
+  },
+  "pa_cumulative_assistance_reference": {
+    "currency": "USD",
+    "price_basis": "nominal declaration-year cohort dollars",
+    "lower_usd": 261497.59,
+    "upper_usd": 8722002.28,
+    "nominal_coverage_target": 0.8,
+    "empirical_test_coverage": 0.7862595419847328,
+    "algorithm": "elastic_net",
+    "target_definition": "Recorded positive federal PA obligations for exact Flood incident declaration-year cohorts; cumulative snapshot, not annual payments or all-agency aid"
+  },
+  "recommended_measures": [
+    {
+      "measure": "acquisition",
+      "name": "收购并退出洪泛区",
+      "ranking_score": 0.6996
+    },
+    {
+      "measure": "drainage",
+      "name": "排水与雨洪管理",
+      "ranking_score": 0.3536
+    }
+  ],
+  "measure_algorithm": "logistic",
+  "impact_definition": {
+    "training_positive_loss_thresholds_2025_cpi_usd": [
+      29935.41,
+      280663.63
+    ],
+    "meaning": "Project-specific county/year impact tiers, not official flood depth/severity grades"
+  },
+  "interpretation": "Annual historical policy association; scores rank recorded choices, not effectiveness or guaranteed funding eligibility",
+  "warnings": [
+    "Prior-measure context comes from 2024; later closures may be missing."
+  ]
+}
