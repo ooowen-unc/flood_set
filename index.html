@@ -7,7 +7,12 @@
     <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no" />
     <script src="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.js"></script>
     <link href="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.css" rel="stylesheet" />
-    <script src="https://unpkg.com/deck.gl@latest/dist.min.js"></script>
+    <script src="https://unpkg.com/deck.gl@9.4.0/dist.min.js"></script>
+    <!-- Embedded copy of flood_timeseries_aggregated.json. Same NOAA NCEI +
+         FEMA NRI data, loaded via a classic script tag so the scene renders
+         even under file:// (where fetch is CORS-blocked). Regenerate with
+         scripts/embed_flood_data.py after rebuilding the JSON. -->
+    <script src="flood_data_embedded.js"></script>
     <style>
         body {
             margin: 0;
@@ -120,7 +125,7 @@
             position: absolute;
             top: 24px;
             right: 24px;
-            width: 280px;
+            width: 300px;
             background: rgba(255, 255, 255, 0.85);
             backdrop-filter: blur(14px);
             -webkit-backdrop-filter: blur(14px);
@@ -145,6 +150,7 @@
         .card-row {
             display: flex;
             justify-content: space-between;
+            gap: 12px;
             margin-bottom: 8px;
             font-size: 13px;
             color: #6b7280;
@@ -154,10 +160,7 @@
             color: #10131a;
             font-weight: 500;
             font-family: monospace;
-        }
-
-        .card-row.fatal span:last-child {
-            color: #c83c46;
+            text-align: right;
         }
 
         .btn-reset {
@@ -177,6 +180,60 @@
         .btn-reset:hover {
             background: #0a2d8c;
             color: #fff;
+        }
+
+        .legend-panel {
+            position: absolute;
+            top: 240px;
+            right: 24px;
+            width: 300px;
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
+            border: 1px solid rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+            padding: 14px 16px;
+            color: #1a1d21;
+            z-index: 10;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.14);
+        }
+
+        .legend-title {
+            font-size: 11px;
+            color: #6b7280;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 8px;
+        }
+
+        .legend-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 6px 0;
+            font-size: 12px;
+            color: #1a1d21;
+        }
+
+        .legend-row .swatch {
+            width: 14px;
+            height: 14px;
+            border-radius: 4px;
+            flex: 0 0 auto;
+            border: 1px solid rgba(0, 0, 0, 0.08);
+        }
+
+        .swatch-blue {
+            background: rgb(20, 110, 245);
+        }
+
+        .swatch-flash {
+            background: rgb(235, 30, 45);
+        }
+
+        .swatch-glow {
+            background: radial-gradient(circle, rgba(255, 236, 180, 0.95) 0%, rgba(226, 135, 25, 0.95) 100%);
+            border-radius: 50%;
         }
 
         .timeline-container {
@@ -236,24 +293,32 @@
     <div id="map-notice"></div>
 
     <div class="hud-panel">
-        <div class="hud-title">US Flood Direct Loss</div>
+        <div class="hud-title">US Cumulative Flood Loss</div>
         <div class="hud-value" id="hud-total-loss">$0</div>
         <div class="hud-sub" id="hud-event-count">Loading dataset...</div>
-        <div id="hud-source">SOURCE: INITIALIZING</div>
+        <div id="hud-source">SOURCE: NOAA NCEI &amp; FEMA NRI</div>
     </div>
 
     <div id="detail-card">
         <div class="card-title" id="card-location">Location</div>
-        <div class="card-row"><span>Damage:</span><span id="card-damage">$0</span></div>
-        <div class="card-row fatal"><span>Fatalities:</span><span id="card-deaths">0</span></div>
+        <div class="card-row"><span>Type:</span><span id="card-type">&mdash;</span></div>
+        <div class="card-row"><span id="card-damage-label">Property Damage:</span><span id="card-damage">$0</span></div>
+        <div class="card-row"><span>Events:</span><span id="card-events">&mdash;</span></div>
         <button class="btn-reset" onclick="resetView()">Reset Overview</button>
+    </div>
+
+    <div class="legend-panel">
+        <div class="legend-title">Legend</div>
+        <div class="legend-row"><span class="swatch swatch-blue"></span><span>Regular Flood</span></div>
+        <div class="legend-row"><span class="swatch swatch-flash"></span><span>Flash Flood</span></div>
+        <div class="legend-row"><span class="swatch swatch-glow"></span><span>Property Loss Intensity</span></div>
     </div>
 
     <div class="timeline-container">
         <button id="play-btn" onclick="togglePlay()">▶</button>
-        <input type="range" id="year-slider" min="2001" max="2027" value="2005" step="0.0833333333333333"
+        <input type="range" id="year-slider" min="1999" max="2025" value="1999" step="1"
             oninput="onYearChange(this.value)">
-        <span class="year-display" id="year-label">2005 - Month 01</span>
+        <span class="year-display" id="year-label">Year 1999</span>
     </div>
 
     <script>
@@ -270,755 +335,20 @@
 
         const US_BOUNDS = [[-130.0, 22.0], [-65.0, 52.0]];
         const DEFAULT_VIEW = { center: [-98.58, 39.83], zoom: 3.8, pitch: 50, bearing: 0 };
-        const FOCUS_VIEW = { zoom: 6.8, pitch: 65 };
-        const YEAR_MIN = 2001;
-        const YEAR_MAX = 2026;
-        const MONTHS_PER_YEAR = 12;
-        const TOTAL_MONTHS = (YEAR_MAX - YEAR_MIN + 1) * MONTHS_PER_YEAR;
-        const DEFAULT_MONTH = (2005 - YEAR_MIN) * MONTHS_PER_YEAR;
-        const PLAY_STEP_MS = 100;
+        const FOCUS_VIEW = { zoom: 6.8, pitch: 62 };
+        const YEAR_MIN = 1999;
+        const YEAR_MAX = 2025;
+        const YEARS = [];
+        for (let y = YEAR_MIN; y <= YEAR_MAX; y++) YEARS.push(y);
+        const TOTAL_YEARS = YEARS.length; // 27
+        const PLAY_STEP_MS = 1500;
+        const COLUMN_RADIUS = 8800;
+        const ELEVATION_SCALE = 30000;
+        const EASE_IN_OUT = t => t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t;
+        const DUAL_TYPE_OFFSET = 0.1;
 
-        // ---------------------------------------------------------------------
-        // Built-in dataset. Covers 2001-2026 so the map always renders even when
-        // the external JSON cannot be read (file:// CORS block, offline, 404).
-        // Field format: c = [lon, lat], d = damage in USD, f = deaths, n = "County, State"
-        // ---------------------------------------------------------------------
-        const fallbackData = {
-            2001: [
-                { c: [-95.39, 29.76], d: 5000000000, f: 22, n: "Harris, TX" },
-                { c: [-94.13, 30.08], d: 300000000, f: 0, n: "Jefferson, TX" },
-                { c: [-94.8, 29.3], d: 250000000, f: 0, n: "Galveston, TX" },
-                { c: [-95.6, 29.05], d: 200000000, f: 0, n: "Brazoria, TX" },
-                { c: [-95.5, 30.3], d: 180000000, f: 0, n: "Montgomery, TX" },
-                { c: [-95.75, 29.55], d: 150000000, f: 0, n: "Fort Bend, TX" },
-                { c: [-97.52, 27.75], d: 120000000, f: 0, n: "Nueces, TX" },
-                { c: [-98.52, 29.45], d: 90000000, f: 0, n: "Bexar, TX" },
-                { c: [-89.95, 29.95], d: 400000000, f: 1, n: "Orleans, LA" },
-                { c: [-93.35, 30.2], d: 250000000, f: 0, n: "Calcasieu, LA" },
-                { c: [-82.42, 38.15], d: 200000000, f: 6, n: "Wayne, WV" },
-                { c: [-82.13, 37.75], d: 120000000, f: 3, n: "Mingo, WV" },
-                { c: [-81.99, 37.83], d: 100000000, f: 2, n: "Logan, WV" },
-                { c: [-81.55, 37.58], d: 90000000, f: 2, n: "Wyoming, WV" },
-                { c: [-81.65, 37.38], d: 70000000, f: 1, n: "McDowell, WV" },
-                { c: [-81.7, 38.7], d: 60000000, f: 0, n: "Kanawha, WV" },
-                { c: [-87.65, 41.85], d: 150000000, f: 2, n: "Cook, IL" },
-                { c: [-80.25, 26.15], d: 100000000, f: 1, n: "Broward, FL" },
-                { c: [-93.57, 41.62], d: 80000000, f: 0, n: "Polk, IA" },
-                { c: [-85.55, 43.03], d: 60000000, f: 0, n: "Kent, MI" },
-                { c: [-77.3, 38.85], d: 50000000, f: 0, n: "Fairfax, VA" },
-                { c: [-73.58, 40.73], d: 45000000, f: 0, n: "Nassau, NY" }
-            ],
-            2002: [
-                { c: [-98.52, 29.45], d: 1000000000, f: 9, n: "Bexar, TX" },
-                { c: [-98.22, 29.7], d: 500000000, f: 12, n: "Comal, TX" },
-                { c: [-97.78, 29.58], d: 300000000, f: 2, n: "Guadalupe, TX" },
-                { c: [-98.03, 29.88], d: 250000000, f: 2, n: "Hays, TX" },
-                { c: [-97.77, 30.33], d: 200000000, f: 1, n: "Travis, TX" },
-                { c: [-99.11, 29.35], d: 150000000, f: 1, n: "Medina, TX" },
-                { c: [-89.95, 29.95], d: 400000000, f: 0, n: "Orleans, LA" },
-                { c: [-90.4, 29.5], d: 250000000, f: 0, n: "Lafourche, LA" },
-                { c: [-90.85, 29.35], d: 200000000, f: 0, n: "Terrebonne, LA" },
-                { c: [-93.2, 29.8], d: 180000000, f: 0, n: "Cameron, LA" },
-                { c: [-92.15, 29.85], d: 150000000, f: 0, n: "Vermilion, LA" },
-                { c: [-83.22, 37.25], d: 200000000, f: 3, n: "Perry, KY" },
-                { c: [-83.32, 37.52], d: 150000000, f: 2, n: "Breathitt, KY" },
-                { c: [-82.4, 37.47], d: 100000000, f: 1, n: "Pike, KY" },
-                { c: [-82.1, 37.27], d: 80000000, f: 1, n: "Buchanan, VA" },
-                { c: [-82.35, 37.12], d: 70000000, f: 1, n: "Dickenson, VA" },
-                { c: [-81.13, 36.49], d: 60000000, f: 0, n: "Alleghany, NC" },
-                { c: [-79.02, 39.97], d: 90000000, f: 1, n: "Somerset, PA" },
-                { c: [-80.25, 39.51], d: 60000000, f: 0, n: "Marion, WV" },
-                { c: [-82.75, 37.55], d: 50000000, f: 0, n: "Floyd, KY" }
-            ],
-            2003: [
-                { c: [-76.25, 36.85], d: 400000000, f: 3, n: "Norfolk, VA" },
-                { c: [-76.03, 36.73], d: 300000000, f: 2, n: "Virginia Beach, VA" },
-                { c: [-76.3, 36.7], d: 200000000, f: 1, n: "Chesapeake, VA" },
-                { c: [-76.4, 37.7], d: 150000000, f: 1, n: "Lancaster, VA" },
-                { c: [-76.3, 37.42], d: 120000000, f: 1, n: "Mathews, VA" },
-                { c: [-75.85, 35.75], d: 250000000, f: 2, n: "Dare, NC" },
-                { c: [-76.15, 35.4], d: 150000000, f: 1, n: "Hyde, NC" },
-                { c: [-76.85, 35.5], d: 120000000, f: 1, n: "Beaufort, NC" },
-                { c: [-76.75, 35.15], d: 100000000, f: 0, n: "Pamlico, NC" },
-                { c: [-76.61, 39.29], d: 200000000, f: 2, n: "Baltimore City, MD" },
-                { c: [-76.6, 38.98], d: 150000000, f: 1, n: "Anne Arundel, MD" },
-                { c: [-76.55, 38.55], d: 100000000, f: 0, n: "Calvert, MD" },
-                { c: [-76.63, 38.25], d: 80000000, f: 0, n: "St. Mary's, MD" },
-                { c: [-90.75, 38.78], d: 150000000, f: 2, n: "Charles, MO" },
-                { c: [-90.55, 38.25], d: 120000000, f: 1, n: "Jefferson, MO" },
-                { c: [-91.05, 38.4], d: 90000000, f: 1, n: "Franklin, MO" },
-                { c: [-90.9, 37.95], d: 70000000, f: 0, n: "Washington, MO" },
-                { c: [-90.9, 32], d: 60000000, f: 0, n: "Claiborne, MS" },
-                { c: [-96.92, 28.85], d: 200000000, f: 2, n: "Victoria, TX" },
-                { c: [-95.95, 28.75], d: 120000000, f: 1, n: "Matagorda, TX" }
-            ],
-            2004: [
-                { c: [-82.05, 26.9], d: 3000000000, f: 10, n: "Charlotte, FL" },
-                { c: [-81.9, 26.6], d: 1500000000, f: 4, n: "Lee, FL" },
-                { c: [-81.85, 27.2], d: 800000000, f: 2, n: "DeSoto, FL" },
-                { c: [-81.8, 27.5], d: 700000000, f: 2, n: "Hardee, FL" },
-                { c: [-81.7, 28.05], d: 900000000, f: 3, n: "Polk, FL" },
-                { c: [-80.7, 28.3], d: 1200000000, f: 4, n: "Brevard, FL" },
-                { c: [-80.55, 27.7], d: 800000000, f: 2, n: "Indian River, FL" },
-                { c: [-80.35, 27.35], d: 700000000, f: 2, n: "St. Lucie, FL" },
-                { c: [-80.25, 27.1], d: 600000000, f: 2, n: "Martin, FL" },
-                { c: [-80.45, 26.7], d: 800000000, f: 3, n: "Palm Beach, FL" },
-                { c: [-87.35, 30.65], d: 2000000000, f: 8, n: "Escambia, FL" },
-                { c: [-86.95, 30.65], d: 900000000, f: 3, n: "Santa Rosa, FL" },
-                { c: [-86.6, 30.6], d: 700000000, f: 2, n: "Okaloosa, FL" },
-                { c: [-87.75, 30.65], d: 800000000, f: 3, n: "Baldwin, AL" },
-                { c: [-88.2, 30.65], d: 600000000, f: 2, n: "Mobile, AL" },
-                { c: [-76.65, 35.7], d: 200000000, f: 1, n: "Washington, NC" },
-                { c: [-82.6, 35.6], d: 500000000, f: 5, n: "Buncombe, NC" },
-                { c: [-82.95, 35.55], d: 300000000, f: 3, n: "Haywood, NC" },
-                { c: [-83.4, 35.15], d: 200000000, f: 2, n: "Macon, NC" },
-                { c: [-81.9, 40.55], d: 120000000, f: 0, n: "Holmes, OH" },
-                { c: [-75.1, 40.35], d: 150000000, f: 1, n: "Bucks, PA" },
-                { c: [-74.75, 40.28], d: 100000000, f: 0, n: "Mercer, NJ" }
-            ],
-            2005: [
-                { c: [-89.95, 29.95], d: 40000000000, f: 1100, n: "Orleans, LA" },
-                { c: [-89.7, 29.85], d: 5000000000, f: 150, n: "St. Bernard, LA" },
-                { c: [-89.8, 29.45], d: 3000000000, f: 50, n: "Plaquemines, LA" },
-                { c: [-90.1, 29.85], d: 6000000000, f: 30, n: "Jefferson, LA" },
-                { c: [-89.95, 30.4], d: 2000000000, f: 12, n: "St. Tammany, LA" },
-                { c: [-89.1, 30.42], d: 5000000000, f: 80, n: "Harrison, MS" },
-                { c: [-89.5, 30.4], d: 3000000000, f: 50, n: "Hancock, MS" },
-                { c: [-88.6, 30.45], d: 2500000000, f: 15, n: "Jackson, MS" },
-                { c: [-89.6, 30.75], d: 700000000, f: 5, n: "Pearl River, MS" },
-                { c: [-88.2, 30.65], d: 1200000000, f: 4, n: "Mobile, AL" },
-                { c: [-87.75, 30.65], d: 800000000, f: 2, n: "Baldwin, AL" },
-                { c: [-88.2, 31.4], d: 200000000, f: 0, n: "Washington, AL" },
-                { c: [-93.2, 29.8], d: 2500000000, f: 3, n: "Cameron, LA" },
-                { c: [-93.35, 30.2], d: 2000000000, f: 4, n: "Calcasieu, LA" },
-                { c: [-92.15, 29.85], d: 800000000, f: 0, n: "Vermilion, LA" },
-                { c: [-94.13, 30.08], d: 1500000000, f: 3, n: "Jefferson, TX" },
-                { c: [-93.75, 30.1], d: 900000000, f: 2, n: "Orange, TX" },
-                { c: [-93.35, 30.75], d: 500000000, f: 0, n: "Beauregard, LA" },
-                { c: [-91.85, 29.85], d: 400000000, f: 0, n: "Iberia, LA" },
-                { c: [-72.25, 43], d: 300000000, f: 4, n: "Cheshire, NH" },
-                { c: [-71.5, 42.95], d: 200000000, f: 1, n: "Hillsborough, NH" },
-                { c: [-71.65, 43.3], d: 150000000, f: 1, n: "Merrimack, NH" },
-                { c: [-71.9, 42.35], d: 250000000, f: 2, n: "Worcester, MA" },
-                { c: [-71.35, 42.5], d: 200000000, f: 1, n: "Middlesex, MA" },
-                { c: [-72.65, 42.9], d: 100000000, f: 1, n: "Windham, VT" },
-                { c: [-71.5, 41.68], d: 150000000, f: 1, n: "Kent, RI" },
-                { c: [-81.7, 41.45], d: 200000000, f: 0, n: "Cuyahoga, OH" },
-                { c: [-84.55, 39.2], d: 120000000, f: 0, n: "Hamilton, OH" },
-                { c: [-74.05, 40.95], d: 400000000, f: 2, n: "Bergen, NJ" }
-            ],
-            2006: [
-                { c: [-75.9, 41.25], d: 300000000, f: 2, n: "Luzerne, PA" },
-                { c: [-75.6, 41.45], d: 200000000, f: 1, n: "Lackawanna, PA" },
-                { c: [-76.45, 41.8], d: 150000000, f: 1, n: "Bradford, PA" },
-                { c: [-75.85, 41.5], d: 120000000, f: 0, n: "Wyoming, PA" },
-                { c: [-75.85, 42.15], d: 200000000, f: 2, n: "Broome, NY" },
-                { c: [-75.05, 42.25], d: 100000000, f: 2, n: "Delaware, NY" },
-                { c: [-75.6, 42.5], d: 80000000, f: 1, n: "Chenango, NY" },
-                { c: [-75.05, 42.65], d: 70000000, f: 1, n: "Otsego, NY" },
-                { c: [-74.8, 41.7], d: 120000000, f: 1, n: "Sullivan, NY" },
-                { c: [-74.3, 41.4], d: 100000000, f: 1, n: "Orange, NY" },
-                { c: [-77.3, 38.85], d: 90000000, f: 1, n: "Fairfax, VA" },
-                { c: [-77.1, 38.88], d: 70000000, f: 0, n: "Arlington, VA" },
-                { c: [-77.45, 38.7], d: 60000000, f: 0, n: "Prince William, VA" },
-                { c: [-121.9, 48.05], d: 200000000, f: 1, n: "Snohomish, WA" },
-                { c: [-121.85, 47.5], d: 150000000, f: 1, n: "King, WA" },
-                { c: [-122.4, 46.6], d: 120000000, f: 0, n: "Lewis, WA" },
-                { c: [-122.1, 47.05], d: 100000000, f: 0, n: "Pierce, WA" },
-                { c: [-123.8, 47], d: 80000000, f: 0, n: "Grays Harbor, WA" },
-                { c: [-77.95, 35.55], d: 120000000, f: 2, n: "Wayne, NC" },
-                { c: [-77.35, 35.6], d: 100000000, f: 2, n: "Pitt, NC" },
-                { c: [-77.9, 34.25], d: 90000000, f: 1, n: "New Hanover, NC" }
-            ],
-            2007: [
-                { c: [-97.93, 35.95], d: 300000000, f: 2, n: "Kingfisher, OK" },
-                { c: [-98.35, 35.55], d: 150000000, f: 1, n: "Caddo, OK" },
-                { c: [-97.85, 35.05], d: 120000000, f: 1, n: "Grady, OK" },
-                { c: [-98.35, 34.65], d: 100000000, f: 0, n: "Comanche, OK" },
-                { c: [-98.95, 34.95], d: 80000000, f: 0, n: "Kiowa, OK" },
-                { c: [-91.95, 44.05], d: 200000000, f: 7, n: "Winona, MN" },
-                { c: [-92.45, 44], d: 100000000, f: 2, n: "Olmsted, MN" },
-                { c: [-92.1, 43.7], d: 80000000, f: 1, n: "Fillmore, MN" },
-                { c: [-91.5, 43.75], d: 70000000, f: 1, n: "Houston, MN" },
-                { c: [-91.55, 43.55], d: 60000000, f: 0, n: "Rush, MN" },
-                { c: [-83.65, 41], d: 200000000, f: 2, n: "Hancock, OH" },
-                { c: [-84.1, 40.75], d: 150000000, f: 1, n: "Allen, OH" },
-                { c: [-84.15, 41], d: 100000000, f: 1, n: "Putnam, OH" },
-                { c: [-83.2, 41.1], d: 90000000, f: 1, n: "Seneca, OH" },
-                { c: [-83.3, 40.85], d: 70000000, f: 0, n: "Wyandot, OH" },
-                { c: [-122.4, 46.6], d: 400000000, f: 1, n: "Lewis, WA" },
-                { c: [-123.8, 47], d: 300000000, f: 1, n: "Grays Harbor, WA" },
-                { c: [-121.8, 48.45], d: 150000000, f: 0, n: "Skagit, WA" },
-                { c: [-122.9, 47.05], d: 100000000, f: 0, n: "Thurston, WA" },
-                { c: [-124.6, 48.1], d: 60000000, f: 0, n: "Clallam, WA" }
-            ],
-            2008: [
-                { c: [-91.65, 42.05], d: 2500000000, f: 5, n: "Linn, IA" },
-                { c: [-91.55, 41.65], d: 500000000, f: 1, n: "Johnson, IA" },
-                { c: [-91.05, 41.8], d: 300000000, f: 1, n: "Cedar, IA" },
-                { c: [-92.35, 42.5], d: 400000000, f: 2, n: "Black Hawk, IA" },
-                { c: [-93.57, 41.62], d: 500000000, f: 2, n: "Polk, IA" },
-                { c: [-90.6, 41.65], d: 400000000, f: 1, n: "Scott, IA" },
-                { c: [-91.25, 41.2], d: 300000000, f: 0, n: "Louisa, IA" },
-                { c: [-92.05, 41.7], d: 200000000, f: 0, n: "Iowa, IA" },
-                { c: [-92.05, 42.1], d: 150000000, f: 0, n: "Benton, IA" },
-                { c: [-91.75, 40.4], d: 120000000, f: 0, n: "Clark, MO" },
-                { c: [-90.55, 41.5], d: 300000000, f: 1, n: "Rock Island, IL" },
-                { c: [-90.75, 41.2], d: 200000000, f: 0, n: "Mercer, IL" },
-                { c: [-91.2, 39.95], d: 150000000, f: 0, n: "Adams, IL" },
-                { c: [-94.8, 29.3], d: 4000000000, f: 20, n: "Galveston, TX" },
-                { c: [-95.39, 29.76], d: 4000000000, f: 10, n: "Harris, TX" },
-                { c: [-93.75, 30.1], d: 1000000000, f: 3, n: "Orange, TX" },
-                { c: [-94.13, 30.08], d: 800000000, f: 2, n: "Jefferson, TX" },
-                { c: [-94.65, 29.7], d: 600000000, f: 1, n: "Chambers, TX" },
-                { c: [-95.6, 29.05], d: 500000000, f: 1, n: "Brazoria, TX" },
-                { c: [-90.85, 29.35], d: 800000000, f: 2, n: "Terrebonne, LA" },
-                { c: [-90.4, 29.5], d: 700000000, f: 1, n: "Lafourche, LA" },
-                { c: [-91.6, 29.65], d: 500000000, f: 1, n: "St. Mary, LA" },
-                { c: [-91.05, 29.9], d: 400000000, f: 0, n: "Assumption, LA" },
-                { c: [-80.7, 28.3], d: 300000000, f: 1, n: "Brevard, FL" },
-                { c: [-81.4, 29.9], d: 200000000, f: 1, n: "St. Johns, FL" }
-            ],
-            2009: [
-                { c: [-97.05, 46.9], d: 500000000, f: 0, n: "Cass, ND" },
-                { c: [-96.75, 46.85], d: 300000000, f: 0, n: "Clay, MN" },
-                { c: [-97.4, 47.95], d: 200000000, f: 0, n: "Grand Forks, ND" },
-                { c: [-97.1, 47.4], d: 120000000, f: 0, n: "Traill, ND" },
-                { c: [-96.65, 47.3], d: 100000000, f: 0, n: "Norman, MN" },
-                { c: [-97.75, 48.4], d: 90000000, f: 0, n: "Walsh, ND" },
-                { c: [-97.55, 48.8], d: 70000000, f: 0, n: "Pembina, ND" },
-                { c: [-95.7, 46.4], d: 80000000, f: 0, n: "Otter Tail, MN" },
-                { c: [-95.8, 46.9], d: 60000000, f: 0, n: "Becker, MN" },
-                { c: [-84.45, 33.79], d: 500000000, f: 10, n: "Fulton, GA" },
-                { c: [-84.6, 33.95], d: 300000000, f: 4, n: "Cobb, GA" },
-                { c: [-84.05, 33.95], d: 200000000, f: 2, n: "Gwinnett, GA" },
-                { c: [-84.75, 33.7], d: 200000000, f: 2, n: "Douglas, GA" },
-                { c: [-84.85, 33.95], d: 150000000, f: 1, n: "Paulding, GA" },
-                { c: [-85.05, 33.6], d: 150000000, f: 4, n: "Carroll, GA" },
-                { c: [-84.25, 33.8], d: 100000000, f: 1, n: "DeKalb, GA" },
-                { c: [-121.85, 47.5], d: 300000000, f: 2, n: "King, WA" },
-                { c: [-121.9, 48.05], d: 200000000, f: 1, n: "Snohomish, WA" },
-                { c: [-122.1, 47.05], d: 200000000, f: 1, n: "Pierce, WA" },
-                { c: [-122.4, 46.6], d: 150000000, f: 0, n: "Lewis, WA" },
-                { c: [-121.85, 48.8], d: 100000000, f: 0, n: "Whatcom, WA" }
-            ],
-            2010: [
-                { c: [-86.78, 36.17], d: 2000000000, f: 11, n: "Davidson, TN" },
-                { c: [-86.9, 35.9], d: 500000000, f: 3, n: "Williamson, TN" },
-                { c: [-86.4, 35.85], d: 300000000, f: 1, n: "Rutherford, TN" },
-                { c: [-86.45, 36.5], d: 300000000, f: 1, n: "Sumner, TN" },
-                { c: [-87.1, 36.25], d: 200000000, f: 1, n: "Cheatham, TN" },
-                { c: [-87.35, 36.05], d: 150000000, f: 0, n: "Dickson, TN" },
-                { c: [-87.5, 36.5], d: 120000000, f: 0, n: "Montgomery, TN" },
-                { c: [-71.42, 41.85], d: 500000000, f: 2, n: "Providence, RI" },
-                { c: [-71.5, 41.68], d: 200000000, f: 1, n: "Kent, RI" },
-                { c: [-71.6, 41.4], d: 150000000, f: 1, n: "Washington, RI" },
-                { c: [-71.25, 41.7], d: 100000000, f: 0, n: "Bristol, RI" },
-                { c: [-71.3, 41.5], d: 90000000, f: 0, n: "Newport, RI" },
-                { c: [-93.57, 41.62], d: 200000000, f: 1, n: "Polk, IA" },
-                { c: [-93.45, 42.05], d: 120000000, f: 0, n: "Story, IA" },
-                { c: [-92.95, 42.05], d: 100000000, f: 0, n: "Marshall, IA" },
-                { c: [-94.25, 34.45], d: 100000000, f: 20, n: "Polk, AR" },
-                { c: [-93.65, 34.55], d: 80000000, f: 2, n: "Montgomery, AR" },
-                { c: [-93.85, 34.05], d: 70000000, f: 1, n: "Howard, AR" },
-                { c: [-94.75, 34.35], d: 60000000, f: 1, n: "Pike, OK" },
-                { c: [-94.7, 34.9], d: 50000000, f: 0, n: "LeFlore, OK" },
-                { c: [-97.35, 35.55], d: 150000000, f: 1, n: "Oklahoma, OK" },
-                { c: [-97.95, 35.5], d: 100000000, f: 0, n: "Canadian, OK" },
-                { c: [-95.35, 35.65], d: 80000000, f: 0, n: "Muskogee, OK" }
-            ],
-            2011: [
-                { c: [-91.3, 30.25], d: 150000000, f: 0, n: "Iberville, LA" },
-                { c: [-91.6, 30.7], d: 200000000, f: 0, n: "Pointe Coupee, LA" },
-                { c: [-91.35, 31.5], d: 200000000, f: 0, n: "Adams, MS" },
-                { c: [-90.85, 32.35], d: 500000000, f: 0, n: "Warren, MS" },
-                { c: [-91.25, 32.75], d: 150000000, f: 0, n: "East Carroll, LA" },
-                { c: [-90.2, 35.15], d: 300000000, f: 0, n: "Crittenden, AR" },
-                { c: [-90.05, 35.15], d: 1500000000, f: 0, n: "Shelby, TN" },
-                { c: [-77.05, 35.15], d: 300000000, f: 2, n: "Craven, NC" },
-                { c: [-76.85, 35.5], d: 200000000, f: 1, n: "Beaufort, NC" },
-                { c: [-90.1, 35.8], d: 200000000, f: 0, n: "Mississippi, AR" },
-                { c: [-89.8, 36.2], d: 200000000, f: 0, n: "Pemiscot, MO" },
-                { c: [-89.55, 36.55], d: 150000000, f: 0, n: "New Madrid, MO" },
-                { c: [-89.55, 37.05], d: 150000000, f: 0, n: "Scott, MO" },
-                { c: [-89.55, 37.3], d: 500000000, f: 0, n: "Cape Girardeau, MO" },
-                { c: [-74.25, 40.8], d: 200000000, f: 1, n: "Essex, NJ" },
-                { c: [-74.55, 40.85], d: 200000000, f: 2, n: "Morris, NJ" },
-                { c: [-74.05, 40.95], d: 200000000, f: 1, n: "Bergen, NJ" },
-                { c: [-74.3, 41.05], d: 500000000, f: 4, n: "Passaic, NJ" },
-                { c: [-96.05, 41.1], d: 400000000, f: 1, n: "Sarpy, NE" },
-                { c: [-75.9, 41.25], d: 300000000, f: 2, n: "Luzerne, PA" },
-                { c: [-96.15, 41.3], d: 300000000, f: 0, n: "Douglas, NE" },
-                { c: [-95.8, 41.35], d: 400000000, f: 1, n: "Pottawattamie, IA" },
-                { c: [-96.55, 42.45], d: 300000000, f: 0, n: "Dakota, NE" },
-                { c: [-96.35, 42.45], d: 500000000, f: 1, n: "Woodbury, IA" },
-                { c: [-72.65, 42.9], d: 200000000, f: 1, n: "Windham, VT" },
-                { c: [-72.55, 43.5], d: 200000000, f: 2, n: "Windsor, VT" },
-                { c: [-72.95, 43.6], d: 300000000, f: 3, n: "Rutland, VT" },
-                { c: [-72.6, 44.25], d: 200000000, f: 2, n: "Washington, VT" },
-                { c: [-100.75, 46.9], d: 300000000, f: 1, n: "Burleigh, ND" },
-                { c: [-101.3, 48.25], d: 1000000000, f: 4, n: "Ward, ND" }
-            ],
-            2012: [
-                { c: [-89.8, 29.45], d: 800000000, f: 1, n: "Plaquemines, LA" },
-                { c: [-90.4, 29.5], d: 400000000, f: 0, n: "Lafourche, LA" },
-                { c: [-90.1, 29.85], d: 500000000, f: 0, n: "Jefferson, LA" },
-                { c: [-89.95, 29.95], d: 1000000000, f: 1, n: "Orleans, LA" },
-                { c: [-90.5, 30.1], d: 500000000, f: 1, n: "St. John the Baptist, LA" },
-                { c: [-90.4, 30.65], d: 300000000, f: 0, n: "Tangipahoa, LA" },
-                { c: [-75.85, 37.35], d: 150000000, f: 1, n: "Northampton, VA" },
-                { c: [-75.8, 37.65], d: 300000000, f: 2, n: "Accomack, VA" },
-                { c: [-75.8, 38.15], d: 300000000, f: 1, n: "Somerset, MD" },
-                { c: [-75.3, 38.25], d: 200000000, f: 1, n: "Worcester, MD" },
-                { c: [-74.85, 39.1], d: 1000000000, f: 1, n: "Cape May, NJ" },
-                { c: [-77.8, 39.3], d: 200000000, f: 1, n: "Jefferson, WV" },
-                { c: [-74.65, 39.45], d: 1500000000, f: 2, n: "Atlantic, NJ" },
-                { c: [-74.25, 39.95], d: 5000000000, f: 12, n: "Ocean, NJ" },
-                { c: [-74.2, 40.3], d: 3000000000, f: 5, n: "Monmouth, NJ" },
-                { c: [-74.35, 40.45], d: 2000000000, f: 3, n: "Middlesex, NJ" },
-                { c: [-74.15, 40.58], d: 1500000000, f: 5, n: "Richmond, NY" },
-                { c: [-74.3, 40.65], d: 1500000000, f: 2, n: "Union, NJ" },
-                { c: [-73.95, 40.65], d: 2000000000, f: 2, n: "Kings, NY" },
-                { c: [-73.8, 40.73], d: 2500000000, f: 6, n: "Queens, NY" },
-                { c: [-73.58, 40.73], d: 4000000000, f: 8, n: "Nassau, NY" },
-                { c: [-74.1, 40.75], d: 2000000000, f: 4, n: "Hudson, NJ" },
-                { c: [-74, 40.75], d: 2000000000, f: 3, n: "New York, NY" },
-                { c: [-74.25, 40.8], d: 1000000000, f: 1, n: "Essex, NJ" },
-                { c: [-72.95, 40.85], d: 3000000000, f: 5, n: "Suffolk, NY" },
-                { c: [-74.05, 40.95], d: 1000000000, f: 2, n: "Bergen, NJ" },
-                { c: [-73.75, 41.15], d: 800000000, f: 2, n: "Westchester, NY" },
-                { c: [-73.35, 41.25], d: 700000000, f: 3, n: "Fairfield, CT" },
-                { c: [-72.9, 41.4], d: 400000000, f: 1, n: "New Haven, CT" },
-                { c: [-72.6, 41.45], d: 300000000, f: 1, n: "Middlesex, CT" }
-            ],
-            2013: [
-                { c: [-105.3, 40.15], d: 1500000000, f: 8, n: "Boulder, CO" },
-                { c: [-105.5, 40.45], d: 1000000000, f: 5, n: "Larimer, CO" },
-                { c: [-104.5, 40.5], d: 600000000, f: 3, n: "Weld, CO" },
-                { c: [-104.35, 39.95], d: 400000000, f: 2, n: "Adams, CO" },
-                { c: [-104.6, 39.65], d: 300000000, f: 1, n: "Arapahoe, CO" },
-                { c: [-104.95, 39.75], d: 300000000, f: 1, n: "Denver, CO" },
-                { c: [-105.25, 39.6], d: 300000000, f: 1, n: "Jefferson, CO" },
-                { c: [-105.05, 39.95], d: 200000000, f: 1, n: "Broomfield, CO" },
-                { c: [-104.55, 38.85], d: 200000000, f: 1, n: "El Paso, CO" },
-                { c: [-103.05, 40.75], d: 150000000, f: 0, n: "Logan, CO" },
-                { c: [-103.75, 40.35], d: 100000000, f: 0, n: "Morgan, CO" },
-                { c: [-105.55, 39.7], d: 100000000, f: 1, n: "Clear Creek, CO" },
-                { c: [-97.77, 30.33], d: 300000000, f: 4, n: "Travis, TX" },
-                { c: [-98.03, 29.88], d: 200000000, f: 5, n: "Hays, TX" },
-                { c: [-97.6, 29.85], d: 100000000, f: 1, n: "Caldwell, TX" },
-                { c: [-97.3, 30.1], d: 100000000, f: 1, n: "Bastrop, TX" },
-                { c: [-97.25, 34.25], d: 200000000, f: 2, n: "Carter, OK" },
-                { c: [-97.3, 35.2], d: 200000000, f: 1, n: "Cleveland, OK" },
-                { c: [-97.35, 35.55], d: 200000000, f: 1, n: "Oklahoma, OK" },
-                { c: [-97, 35.2], d: 100000000, f: 0, n: "Pottawatomie, OK" },
-                { c: [-93.35, 37.25], d: 150000000, f: 1, n: "Greene, MO" },
-                { c: [-93.4, 37.6], d: 100000000, f: 1, n: "Polk, MO" },
-                { c: [-93.05, 37.65], d: 90000000, f: 0, n: "Dallas, MO" },
-                { c: [-92.6, 37.65], d: 80000000, f: 0, n: "Laclede, MO" },
-                { c: [-92.2, 37.8], d: 70000000, f: 0, n: "Pulaski, MO" }
-            ],
-            2014: [
-                { c: [-83.2, 42.3], d: 1500000000, f: 2, n: "Wayne, MI" },
-                { c: [-83.35, 42.65], d: 800000000, f: 1, n: "Oakland, MI" },
-                { c: [-82.95, 42.65], d: 500000000, f: 1, n: "Macomb, MI" },
-                { c: [-83.75, 42.25], d: 300000000, f: 0, n: "Washtenaw, MI" },
-                { c: [-83.95, 42.6], d: 200000000, f: 0, n: "Livingston, MI" },
-                { c: [-83.5, 41.95], d: 150000000, f: 0, n: "Monroe, MI" },
-                { c: [-73.58, 40.73], d: 500000000, f: 1, n: "Nassau, NY" },
-                { c: [-72.95, 40.85], d: 600000000, f: 1, n: "Suffolk, NY" },
-                { c: [-112.3, 33.45], d: 300000000, f: 2, n: "Maricopa, AZ" },
-                { c: [-113.9, 33.75], d: 80000000, f: 0, n: "La Paz, AZ" },
-                { c: [-113.9, 34.8], d: 60000000, f: 0, n: "Mohave, AZ" },
-                { c: [-105.3, 40.15], d: 200000000, f: 1, n: "Boulder, CO" },
-                { c: [-104.5, 40.5], d: 200000000, f: 1, n: "Weld, CO" },
-                { c: [-74.05, 40.95], d: 200000000, f: 1, n: "Bergen, NJ" },
-                { c: [-74.25, 40.8], d: 150000000, f: 0, n: "Essex, NJ" },
-                { c: [-74.6, 40.55], d: 150000000, f: 0, n: "Somerset, NJ" },
-                { c: [-74.35, 40.45], d: 150000000, f: 0, n: "Middlesex, NJ" },
-                { c: [-74.2, 40.3], d: 200000000, f: 1, n: "Monmouth, NJ" },
-                { c: [-76.6, 38.98], d: 150000000, f: 1, n: "Anne Arundel, MD" },
-                { c: [-76.65, 39.4], d: 120000000, f: 0, n: "Baltimore, MD" },
-                { c: [-76.95, 39.25], d: 100000000, f: 0, n: "Howard, MD" },
-                { c: [-75.95, 39.55], d: 80000000, f: 0, n: "Cecil, MD" },
-                { c: [-76.3, 40.05], d: 150000000, f: 1, n: "Lancaster, PA" },
-                { c: [-76.75, 40.3], d: 100000000, f: 0, n: "Dauphin, PA" }
-            ],
-            2015: [
-                { c: [-98.03, 29.88], d: 300000000, f: 12, n: "Hays, TX" },
-                { c: [-97.77, 30.33], d: 200000000, f: 4, n: "Travis, TX" },
-                { c: [-98.4, 30.3], d: 100000000, f: 4, n: "Blanco, TX" },
-                { c: [-95.39, 29.76], d: 500000000, f: 8, n: "Harris, TX" },
-                { c: [-98.52, 29.45], d: 300000000, f: 3, n: "Bexar, TX" },
-                { c: [-98.22, 29.7], d: 200000000, f: 2, n: "Comal, TX" },
-                { c: [-97.78, 29.58], d: 150000000, f: 1, n: "Guadalupe, TX" },
-                { c: [-97.6, 29.85], d: 150000000, f: 1, n: "Caldwell, TX" },
-                { c: [-96.8, 32.75], d: 300000000, f: 3, n: "Dallas, TX" },
-                { c: [-80.9, 34], d: 1000000000, f: 9, n: "Richland, SC" },
-                { c: [-81.05, 33.9], d: 400000000, f: 3, n: "Lexington, SC" },
-                { c: [-80.75, 33.6], d: 200000000, f: 1, n: "Calhoun, SC" },
-                { c: [-80.2, 33.75], d: 200000000, f: 1, n: "Clarendon, SC" },
-                { c: [-80.35, 33.9], d: 200000000, f: 2, n: "Sumter, SC" },
-                { c: [-80.8, 33.45], d: 200000000, f: 2, n: "Orangeburg, SC" },
-                { c: [-79.95, 33.2], d: 200000000, f: 1, n: "Berkeley, SC" },
-                { c: [-79.95, 32.8], d: 300000000, f: 1, n: "Charleston, SC" },
-                { c: [-80.2, 33.05], d: 150000000, f: 1, n: "Dorchester, SC" },
-                { c: [-79.75, 34.25], d: 150000000, f: 1, n: "Florence, SC" },
-                { c: [-79.7, 33.65], d: 100000000, f: 1, n: "Williamsburg, SC" },
-                { c: [-79.35, 34.1], d: 100000000, f: 1, n: "Marion, SC" },
-                { c: [-78.95, 33.9], d: 150000000, f: 1, n: "Horry, SC" },
-                { c: [-97.35, 35.55], d: 200000000, f: 1, n: "Oklahoma, OK" },
-                { c: [-98.35, 34.65], d: 100000000, f: 0, n: "Comanche, OK" },
-                { c: [-96.7, 34.3], d: 90000000, f: 0, n: "Johnston, OK" },
-                { c: [-96.7, 34.75], d: 80000000, f: 0, n: "Pontotoc, OK" }
-            ],
-            2016: [
-                { c: [-95.6, 29.05], d: 200000000, f: 0, n: "Brazoria, TX" },
-                { c: [-81.15, 29.05], d: 200000000, f: 1, n: "Volusia, FL" },
-                { c: [-81.3, 29.45], d: 200000000, f: 1, n: "Flagler, FL" },
-                { c: [-95.75, 29.55], d: 400000000, f: 2, n: "Fort Bend, TX" },
-                { c: [-95.39, 29.76], d: 1000000000, f: 8, n: "Harris, TX" },
-                { c: [-81.4, 29.9], d: 250000000, f: 1, n: "St. Johns, FL" },
-                { c: [-95.95, 30.05], d: 200000000, f: 0, n: "Waller, TX" },
-                { c: [-90.9, 30.2], d: 800000000, f: 3, n: "Ascension, LA" },
-                { c: [-91.3, 30.25], d: 300000000, f: 1, n: "Iberville, LA" },
-                { c: [-95.5, 30.3], d: 400000000, f: 1, n: "Montgomery, TX" },
-                { c: [-81.65, 30.35], d: 300000000, f: 2, n: "Duval, FL" },
-                { c: [-90.75, 30.45], d: 1500000000, f: 6, n: "Livingston, LA" },
-                { c: [-91.1, 30.5], d: 1200000000, f: 5, n: "East Baton Rouge, LA" },
-                { c: [-90.4, 30.65], d: 400000000, f: 3, n: "Tangipahoa, LA" },
-                { c: [-91.05, 30.85], d: 300000000, f: 2, n: "East Feliciana, LA" },
-                { c: [-90.75, 30.85], d: 300000000, f: 1, n: "St. Helena, LA" },
-                { c: [-81.1, 32.05], d: 200000000, f: 1, n: "Chatham, GA" },
-                { c: [-78.95, 33.9], d: 200000000, f: 1, n: "Horry, SC" },
-                { c: [-79.35, 34.1], d: 200000000, f: 2, n: "Marion, SC" },
-                { c: [-79.1, 34.65], d: 600000000, f: 8, n: "Robeson, NC" },
-                { c: [-78.85, 35.05], d: 400000000, f: 6, n: "Cumberland, NC" },
-                { c: [-77.65, 35.25], d: 250000000, f: 2, n: "Lenoir, NC" },
-                { c: [-77.7, 35.45], d: 200000000, f: 1, n: "Greene, NC" },
-                { c: [-76.85, 35.5], d: 200000000, f: 1, n: "Beaufort, NC" },
-                { c: [-77.95, 35.55], d: 300000000, f: 3, n: "Wayne, NC" },
-                { c: [-77.35, 35.6], d: 300000000, f: 2, n: "Pitt, NC" },
-                { c: [-77.6, 35.9], d: 300000000, f: 3, n: "Edgecombe, NC" },
-                { c: [-80.45, 37.95], d: 500000000, f: 15, n: "Greenbrier, WV" },
-                { c: [-81.55, 38.35], d: 200000000, f: 6, n: "Kanawha, WV" },
-                { c: [-76.95, 39.25], d: 200000000, f: 2, n: "Howard, MD" }
-            ],
-            2017: [
-                { c: [-81.2, 25.2], d: 2500000000, f: 10, n: "Monroe, FL" },
-                { c: [-80.45, 25.65], d: 2000000000, f: 6, n: "Miami-Dade, FL" },
-                { c: [-81.4, 26.1], d: 2000000000, f: 8, n: "Collier, FL" },
-                { c: [-80.25, 26.15], d: 1000000000, f: 4, n: "Broward, FL" },
-                { c: [-81.9, 26.6], d: 1500000000, f: 6, n: "Lee, FL" },
-                { c: [-80.45, 26.7], d: 1000000000, f: 4, n: "Palm Beach, FL" },
-                { c: [-82.05, 26.9], d: 1000000000, f: 4, n: "Charlotte, FL" },
-                { c: [-81.35, 27.35], d: 500000000, f: 4, n: "Highlands, FL" },
-                { c: [-97.52, 27.75], d: 1500000000, f: 2, n: "Nueces, TX" },
-                { c: [-97.5, 28], d: 700000000, f: 1, n: "San Patricio, TX" },
-                { c: [-81.7, 28.05], d: 700000000, f: 3, n: "Polk, FL" },
-                { c: [-97.05, 28.1], d: 1200000000, f: 3, n: "Aransas, TX" },
-                { c: [-80.7, 28.3], d: 600000000, f: 2, n: "Brevard, FL" },
-                { c: [-97.15, 28.35], d: 800000000, f: 1, n: "Refugio, TX" },
-                { c: [-96.6, 28.45], d: 600000000, f: 1, n: "Calhoun, TX" },
-                { c: [-81.25, 28.5], d: 800000000, f: 3, n: "Orange, FL" },
-                { c: [-96.92, 28.85], d: 600000000, f: 1, n: "Victoria, TX" },
-                { c: [-95.6, 29.05], d: 3000000000, f: 2, n: "Brazoria, TX" },
-                { c: [-81.15, 29.05], d: 600000000, f: 2, n: "Volusia, FL" },
-                { c: [-96.2, 29.3], d: 700000000, f: 1, n: "Wharton, TX" },
-                { c: [-94.8, 29.3], d: 3000000000, f: 1, n: "Galveston, TX" },
-                { c: [-95.75, 29.55], d: 4000000000, f: 5, n: "Fort Bend, TX" },
-                { c: [-95.39, 29.76], d: 30000000000, f: 20, n: "Harris, TX" },
-                { c: [-95.95, 30.05], d: 800000000, f: 1, n: "Waller, TX" },
-                { c: [-94.13, 30.08], d: 6000000000, f: 4, n: "Jefferson, TX" },
-                { c: [-93.75, 30.1], d: 5000000000, f: 3, n: "Orange, TX" },
-                { c: [-95.5, 30.3], d: 3000000000, f: 2, n: "Montgomery, TX" },
-                { c: [-81.65, 30.35], d: 700000000, f: 4, n: "Duval, FL" },
-                { c: [-121.11, 38.55], d: 300000000, f: 1, n: "Sacramento, CA" },
-                { c: [-121.55, 39.75], d: 1000000000, f: 4, n: "Butte, CA" }
-            ],
-            2018: [
-                { c: [-77.9, 34.25], d: 1500000000, f: 5, n: "New Hanover, NC" },
-                { c: [-78.25, 34.05], d: 800000000, f: 3, n: "Brunswick, NC" },
-                { c: [-77.9, 34.5], d: 700000000, f: 3, n: "Pender, NC" },
-                { c: [-77.4, 34.75], d: 1200000000, f: 6, n: "Onslow, NC" },
-                { c: [-77.35, 35], d: 800000000, f: 5, n: "Jones, NC" },
-                { c: [-77.05, 35.15], d: 800000000, f: 3, n: "Craven, NC" },
-                { c: [-76.75, 35.15], d: 500000000, f: 2, n: "Pamlico, NC" },
-                { c: [-77.95, 34.95], d: 700000000, f: 4, n: "Duplin, NC" },
-                { c: [-77.65, 35.25], d: 600000000, f: 2, n: "Lenoir, NC" },
-                { c: [-77.95, 35.55], d: 500000000, f: 2, n: "Wayne, NC" },
-                { c: [-79.1, 34.65], d: 500000000, f: 4, n: "Robeson, NC" },
-                { c: [-78.85, 35.05], d: 400000000, f: 3, n: "Cumberland, NC" },
-                { c: [-78.6, 34.6], d: 400000000, f: 3, n: "Bladen, NC" },
-                { c: [-78.95, 34.25], d: 400000000, f: 2, n: "Columbus, NC" },
-                { c: [-76.85, 35.5], d: 300000000, f: 1, n: "Beaufort, NC" },
-                { c: [-85.65, 30.25], d: 3000000000, f: 8, n: "Bay, FL" },
-                { c: [-85.2, 29.95], d: 1500000000, f: 4, n: "Gulf, FL" },
-                { c: [-85.2, 30.75], d: 1200000000, f: 3, n: "Jackson, FL" },
-                { c: [-85.3, 30.45], d: 800000000, f: 2, n: "Calhoun, FL" },
-                { c: [-84.85, 30.25], d: 500000000, f: 1, n: "Liberty, FL" },
-                { c: [-85.65, 30.6], d: 500000000, f: 1, n: "Washington, FL" },
-                { c: [-76.95, 39.25], d: 100000000, f: 1, n: "Howard, MD" },
-                { c: [-79.15, 37.4], d: 200000000, f: 2, n: "Lynchburg, VA" },
-                { c: [-79.05, 37.6], d: 150000000, f: 1, n: "Amherst, VA" },
-                { c: [-78.9, 37.8], d: 100000000, f: 1, n: "Nelson, VA" },
-                { c: [-79.65, 37.8], d: 100000000, f: 1, n: "Alleghany, VA" },
-                { c: [-79.95, 37.55], d: 100000000, f: 0, n: "Botetourt, VA" },
-                { c: [-80.3, 36.65], d: 80000000, f: 0, n: "Patrick, VA" }
-            ],
-            2019: [
-                { c: [-96.15, 41.3], d: 800000000, f: 2, n: "Douglas, NE" },
-                { c: [-96.05, 41.1], d: 400000000, f: 1, n: "Sarpy, NE" },
-                { c: [-96.2, 41.55], d: 300000000, f: 1, n: "Washington, NE" },
-                { c: [-96.65, 41.55], d: 300000000, f: 0, n: "Dodge, NE" },
-                { c: [-96.65, 41.2], d: 200000000, f: 0, n: "Saunders, NE" },
-                { c: [-96.15, 40.9], d: 200000000, f: 0, n: "Cass, NE" },
-                { c: [-95.6, 41.05], d: 300000000, f: 1, n: "Mills, IA" },
-                { c: [-95.6, 40.75], d: 300000000, f: 1, n: "Fremont, IA" },
-                { c: [-95.8, 41.35], d: 400000000, f: 1, n: "Pottawattamie, IA" },
-                { c: [-95.85, 41.65], d: 200000000, f: 0, n: "Harrison, IA" },
-                { c: [-98.8, 42.45], d: 200000000, f: 0, n: "Holt, NE" },
-                { c: [-97.9, 42.6], d: 150000000, f: 0, n: "Knox, NE" },
-                { c: [-96.55, 42.45], d: 200000000, f: 0, n: "Dakota, NE" },
-                { c: [-96.7, 42.15], d: 150000000, f: 0, n: "Thurston, NE" },
-                { c: [-94.8, 39.7], d: 300000000, f: 1, n: "Buchanan, MO" },
-                { c: [-95.05, 39.95], d: 200000000, f: 0, n: "Holt, MO" },
-                { c: [-95.4, 40.45], d: 150000000, f: 0, n: "Atchison, MO" },
-                { c: [-94.85, 39.95], d: 150000000, f: 0, n: "Andrew, MO" },
-                { c: [-94.35, 39], d: 400000000, f: 1, n: "Jackson, MO" },
-                { c: [-94.75, 39.15], d: 200000000, f: 0, n: "Wyandotte, KS" },
-                { c: [-91.35, 34.3], d: 300000000, f: 1, n: "Arkansas, AR" },
-                { c: [-91.95, 34.25], d: 300000000, f: 1, n: "Jefferson, AR" },
-                { c: [-92.3, 34.75], d: 300000000, f: 1, n: "Pulaski, AR" },
-                { c: [-95.39, 29.76], d: 800000000, f: 5, n: "Harris, TX" },
-                { c: [-94.13, 30.08], d: 500000000, f: 2, n: "Jefferson, TX" },
-                { c: [-94.65, 29.7], d: 300000000, f: 1, n: "Chambers, TX" },
-                { c: [-94.8, 30.15], d: 200000000, f: 1, n: "Liberty, TX" },
-                { c: [-75.85, 35.75], d: 300000000, f: 1, n: "Dare, NC" },
-                { c: [-76.15, 35.4], d: 200000000, f: 0, n: "Hyde, NC" }
-            ],
-            2020: [
-                { c: [-84.4, 43.65], d: 300000000, f: 2, n: "Midland, MI" },
-                { c: [-84.5, 44], d: 150000000, f: 1, n: "Gladwin, MI" },
-                { c: [-84.05, 43.35], d: 200000000, f: 1, n: "Saginaw, MI" },
-                { c: [-84.85, 43.65], d: 100000000, f: 0, n: "Isabella, MI" },
-                { c: [-83.95, 43.65], d: 100000000, f: 0, n: "Bay, MI" },
-                { c: [-93.2, 29.8], d: 1000000000, f: 2, n: "Cameron, LA" },
-                { c: [-93.35, 30.2], d: 3000000000, f: 6, n: "Calcasieu, LA" },
-                { c: [-93.35, 30.75], d: 800000000, f: 2, n: "Beauregard, LA" },
-                { c: [-93.2, 31.1], d: 500000000, f: 1, n: "Vernon, LA" },
-                { c: [-92.85, 30.65], d: 400000000, f: 1, n: "Allen, LA" },
-                { c: [-92.55, 31.2], d: 300000000, f: 0, n: "Rapides, LA" },
-                { c: [-93.75, 30.1], d: 500000000, f: 1, n: "Orange, TX" },
-                { c: [-94.13, 30.08], d: 400000000, f: 1, n: "Jefferson, TX" },
-                { c: [-87.75, 30.65], d: 800000000, f: 2, n: "Baldwin, AL" },
-                { c: [-88.2, 30.65], d: 700000000, f: 2, n: "Mobile, AL" },
-                { c: [-87.35, 30.65], d: 800000000, f: 3, n: "Escambia, FL" },
-                { c: [-86.95, 30.65], d: 500000000, f: 2, n: "Santa Rosa, FL" },
-                { c: [-86.6, 30.6], d: 400000000, f: 1, n: "Okaloosa, FL" },
-                { c: [-74.05, 40.95], d: 300000000, f: 1, n: "Bergen, NJ" },
-                { c: [-74.25, 40.8], d: 300000000, f: 2, n: "Essex, NJ" },
-                { c: [-74.3, 41.05], d: 300000000, f: 2, n: "Passaic, NJ" },
-                { c: [-74.35, 40.45], d: 200000000, f: 1, n: "Middlesex, NJ" },
-                { c: [-73.58, 40.73], d: 200000000, f: 1, n: "Nassau, NY" },
-                { c: [-73.75, 41.15], d: 200000000, f: 1, n: "Westchester, NY" },
-                { c: [-75.15, 40], d: 300000000, f: 1, n: "Philadelphia, PA" },
-                { c: [-75.35, 40.2], d: 200000000, f: 1, n: "Montgomery, PA" },
-                { c: [-75.1, 40.35], d: 200000000, f: 0, n: "Bucks, PA" },
-                { c: [-80.25, 26.15], d: 300000000, f: 1, n: "Broward, FL" },
-                { c: [-80.45, 25.65], d: 300000000, f: 1, n: "Miami-Dade, FL" }
-            ],
-            2021: [
-                { c: [-90.85, 29.35], d: 2000000000, f: 2, n: "Terrebonne, LA" },
-                { c: [-90.4, 29.5], d: 3000000000, f: 3, n: "Lafourche, LA" },
-                { c: [-90.1, 29.85], d: 4000000000, f: 5, n: "Jefferson, LA" },
-                { c: [-90.4, 29.95], d: 1500000000, f: 2, n: "St. Charles, LA" },
-                { c: [-89.95, 29.95], d: 3000000000, f: 2, n: "Orleans, LA" },
-                { c: [-90.8, 30.05], d: 800000000, f: 1, n: "St. James, LA" },
-                { c: [-90.5, 30.1], d: 1500000000, f: 1, n: "St. John the Baptist, LA" },
-                { c: [-90.9, 30.2], d: 700000000, f: 1, n: "Ascension, LA" },
-                { c: [-89.95, 30.4], d: 400000000, f: 0, n: "St. Tammany, LA" },
-                { c: [-90.75, 30.45], d: 400000000, f: 0, n: "Livingston, LA" },
-                { c: [-90.4, 30.65], d: 500000000, f: 1, n: "Tangipahoa, LA" },
-                { c: [-87.75, 36.05], d: 500000000, f: 20, n: "Humphreys, TN" },
-                { c: [-75.15, 40], d: 500000000, f: 2, n: "Philadelphia, PA" },
-                { c: [-75.35, 40.2], d: 400000000, f: 2, n: "Montgomery, PA" },
-                { c: [-74.7, 40.25], d: 600000000, f: 1, n: "Mercer, NJ" },
-                { c: [-75.1, 40.35], d: 400000000, f: 1, n: "Bucks, PA" },
-                { c: [-74.35, 40.45], d: 800000000, f: 3, n: "Middlesex, NJ" },
-                { c: [-74.95, 40.55], d: 500000000, f: 1, n: "Hunterdon, NJ" },
-                { c: [-74.6, 40.55], d: 700000000, f: 2, n: "Somerset, NJ" },
-                { c: [-74.3, 40.65], d: 1200000000, f: 4, n: "Union, NJ" },
-                { c: [-73.95, 40.65], d: 500000000, f: 3, n: "Kings, NY" },
-                { c: [-73.8, 40.73], d: 600000000, f: 8, n: "Queens, NY" },
-                { c: [-74.1, 40.75], d: 1000000000, f: 2, n: "Hudson, NJ" },
-                { c: [-74, 40.75], d: 800000000, f: 5, n: "New York, NY" },
-                { c: [-74.25, 40.8], d: 1500000000, f: 8, n: "Essex, NJ" },
-                { c: [-73.9, 40.85], d: 400000000, f: 3, n: "Bronx, NY" },
-                { c: [-74.05, 40.95], d: 500000000, f: 1, n: "Bergen, NJ" },
-                { c: [-74.3, 41.05], d: 1000000000, f: 2, n: "Passaic, NJ" },
-                { c: [-73.75, 41.15], d: 400000000, f: 2, n: "Westchester, NY" },
-                { c: [-72.7, 41.8], d: 300000000, f: 1, n: "Hartford, CT" }
-            ],
-            2022: [
-                { c: [-81.4, 26.1], d: 4000000000, f: 12, n: "Collier, FL" },
-                { c: [-81.9, 26.6], d: 8000000000, f: 35, n: "Lee, FL" },
-                { c: [-82.05, 26.9], d: 6000000000, f: 24, n: "Charlotte, FL" },
-                { c: [-82.4, 27.2], d: 2000000000, f: 6, n: "Sarasota, FL" },
-                { c: [-81.85, 27.2], d: 1200000000, f: 4, n: "DeSoto, FL" },
-                { c: [-81.8, 27.5], d: 1500000000, f: 5, n: "Hardee, FL" },
-                { c: [-81.7, 28.05], d: 800000000, f: 3, n: "Polk, FL" },
-                { c: [-81.25, 28.5], d: 600000000, f: 3, n: "Orange, FL" },
-                { c: [-81.25, 28.7], d: 500000000, f: 2, n: "Seminole, FL" },
-                { c: [-81.15, 29.05], d: 700000000, f: 3, n: "Volusia, FL" },
-                { c: [-89.95, 32.25], d: 100000000, f: 0, n: "Rankin, MS" },
-                { c: [-90.45, 32.3], d: 300000000, f: 1, n: "Hinds, MS" },
-                { c: [-90.15, 32.55], d: 100000000, f: 0, n: "Madison, MS" },
-                { c: [-83.4, 37.1], d: 80000000, f: 1, n: "Leslie, KY" },
-                { c: [-82.85, 37.12], d: 200000000, f: 5, n: "Letcher, KY" },
-                { c: [-83.75, 37.15], d: 80000000, f: 1, n: "Clay, KY" },
-                { c: [-83.22, 37.25], d: 400000000, f: 14, n: "Perry, KY" },
-                { c: [-82.95, 37.35], d: 200000000, f: 4, n: "Knott, KY" },
-                { c: [-83.7, 37.42], d: 100000000, f: 1, n: "Owsley, KY" },
-                { c: [-82.4, 37.47], d: 150000000, f: 2, n: "Pike, KY" },
-                { c: [-83.32, 37.52], d: 300000000, f: 5, n: "Breathitt, KY" },
-                { c: [-82.75, 37.55], d: 150000000, f: 2, n: "Floyd, KY" },
-                { c: [-90.55, 38.25], d: 150000000, f: 1, n: "Jefferson, MO" },
-                { c: [-89.35, 38.35], d: 100000000, f: 0, n: "Washington, IL" },
-                { c: [-91.05, 38.4], d: 150000000, f: 1, n: "Franklin, MO" },
-                { c: [-90.2, 38.63], d: 300000000, f: 3, n: "St. Louis City, MO" },
-                { c: [-90.45, 38.65], d: 200000000, f: 2, n: "St. Louis, MO" },
-                { c: [-90.65, 38.8], d: 200000000, f: 1, n: "St. Charles, MO" },
-                { c: [-110.6, 45.4], d: 200000000, f: 1, n: "Yellowstone, MT" },
-                { c: [-110.55, 45.5], d: 150000000, f: 1, n: "Park, MT" }
-            ],
-            2023: [
-                { c: [-82.75, 27.85], d: 200000000, f: 1, n: "Pinellas, FL" },
-                { c: [-82.7, 29.2], d: 500000000, f: 1, n: "Levy, FL" },
-                { c: [-83.15, 29.55], d: 400000000, f: 1, n: "Dixie, FL" },
-                { c: [-83.15, 29.95], d: 200000000, f: 0, n: "Lafayette, FL" },
-                { c: [-83.6, 30.05], d: 300000000, f: 1, n: "Taylor, FL" },
-                { c: [-83.45, 30.45], d: 200000000, f: 0, n: "Madison, FL" },
-                { c: [-119.25, 34.35], d: 200000000, f: 1, n: "Ventura, CA" },
-                { c: [-118.85, 35.35], d: 200000000, f: 1, n: "Kern, CA" },
-                { c: [-120.65, 35.5], d: 300000000, f: 1, n: "San Luis Obispo, CA" },
-                { c: [-119.35, 36.2], d: 300000000, f: 1, n: "Tulare, CA" },
-                { c: [-121.65, 36.6], d: 500000000, f: 2, n: "Monterey, CA" },
-                { c: [-122.05, 37.05], d: 500000000, f: 2, n: "Santa Cruz, CA" },
-                { c: [-120.65, 37.2], d: 300000000, f: 1, n: "Merced, CA" },
-                { c: [-121.9, 37.65], d: 150000000, f: 0, n: "Alameda, CA" },
-                { c: [-121.9, 37.9], d: 150000000, f: 0, n: "Contra Costa, CA" },
-                { c: [-121.25, 37.95], d: 150000000, f: 1, n: "San Joaquin, CA" },
-                { c: [-121.11, 38.55], d: 200000000, f: 1, n: "Sacramento, CA" },
-                { c: [-72.65, 42.9], d: 80000000, f: 0, n: "Windham, VT" },
-                { c: [-72.55, 43.5], d: 200000000, f: 1, n: "Windsor, VT" },
-                { c: [-72.95, 43.6], d: 200000000, f: 1, n: "Rutland, VT" },
-                { c: [-72.35, 44], d: 80000000, f: 0, n: "Orange, VT" },
-                { c: [-73.15, 44.05], d: 150000000, f: 1, n: "Addison, VT" },
-                { c: [-70.2, 44.15], d: 80000000, f: 0, n: "Androscoggin, ME" },
-                { c: [-72.6, 44.25], d: 300000000, f: 1, n: "Washington, VT" },
-                { c: [-73.1, 44.45], d: 150000000, f: 0, n: "Chittenden, VT" },
-                { c: [-72.1, 44.45], d: 80000000, f: 0, n: "Caledonia, VT" },
-                { c: [-72.65, 44.6], d: 100000000, f: 1, n: "Lamoille, VT" },
-                { c: [-72.25, 44.8], d: 100000000, f: 1, n: "Orleans, VT" },
-                { c: [-70.45, 44.95], d: 100000000, f: 1, n: "Franklin, ME" },
-                { c: [-69.95, 45.25], d: 80000000, f: 0, n: "Somerset, ME" }
-            ],
-            2024: [
-                { c: [-82.05, 26.9], d: 600000000, f: 3, n: "Charlotte, FL" },
-                { c: [-82.4, 27.2], d: 800000000, f: 5, n: "Sarasota, FL" },
-                { c: [-82.35, 27.5], d: 700000000, f: 4, n: "Manatee, FL" },
-                { c: [-82.75, 27.85], d: 4000000000, f: 12, n: "Pinellas, FL" },
-                { c: [-82.4, 27.9], d: 1500000000, f: 5, n: "Hillsborough, FL" },
-                { c: [-82.6, 28.3], d: 1000000000, f: 4, n: "Pasco, FL" },
-                { c: [-82.7, 29.2], d: 600000000, f: 3, n: "Levy, FL" },
-                { c: [-83.15, 29.55], d: 600000000, f: 3, n: "Dixie, FL" },
-                { c: [-83.6, 30.05], d: 800000000, f: 4, n: "Taylor, FL" },
-                { c: [-82.05, 33.35], d: 300000000, f: 3, n: "Richmond, GA" },
-                { c: [-82.05, 34.5], d: 200000000, f: 2, n: "Laurens, SC" },
-                { c: [-82.4, 34.9], d: 500000000, f: 4, n: "Greenville, SC" },
-                { c: [-82, 34.95], d: 300000000, f: 2, n: "Spartanburg, SC" },
-                { c: [-82.8, 35.25], d: 300000000, f: 3, n: "Transylvania, NC" },
-                { c: [-82.45, 35.35], d: 1500000000, f: 15, n: "Henderson, NC" },
-                { c: [-81.95, 35.4], d: 400000000, f: 3, n: "Rutherford, NC" },
-                { c: [-82.95, 35.55], d: 800000000, f: 8, n: "Haywood, NC" },
-                { c: [-82.6, 35.6], d: 6000000000, f: 80, n: "Buncombe, NC" },
-                { c: [-81.35, 35.65], d: 300000000, f: 2, n: "Catawba, NC" },
-                { c: [-82.05, 35.7], d: 500000000, f: 4, n: "McDowell, NC" },
-                { c: [-81.75, 35.75], d: 300000000, f: 2, n: "Burke, NC" },
-                { c: [-82.7, 35.85], d: 300000000, f: 3, n: "Madison, NC" },
-                { c: [-82.2, 35.9], d: 600000000, f: 6, n: "Yancey, NC" },
-                { c: [-81.55, 35.95], d: 200000000, f: 2, n: "Caldwell, NC" },
-                { c: [-82.15, 36], d: 300000000, f: 3, n: "Mitchell, NC" },
-                { c: [-81.95, 36.05], d: 500000000, f: 5, n: "Avery, NC" },
-                { c: [-82.35, 36.1], d: 300000000, f: 4, n: "Unicoi, TN" },
-                { c: [-81.7, 36.25], d: 500000000, f: 4, n: "Watauga, NC" },
-                { c: [-82.5, 36.3], d: 300000000, f: 4, n: "Washington, TN" },
-                { c: [-96.2, 43.35], d: 300000000, f: 2, n: "Lyon, IA" }
-            ],
-            2025: [
-                { c: [-99.15, 30.05], d: 500000000, f: 30, n: "Kerr, TX" },
-                { c: [-98.7, 29.95], d: 300000000, f: 12, n: "Kendall, TX" },
-                { c: [-99.8, 29.85], d: 150000000, f: 8, n: "Real, TX" },
-                { c: [-99.1, 29.75], d: 200000000, f: 8, n: "Bandera, TX" },
-                { c: [-98.22, 29.7], d: 400000000, f: 10, n: "Comal, TX" },
-                { c: [-98.03, 29.88], d: 300000000, f: 6, n: "Hays, TX" },
-                { c: [-98.7, 30.3], d: 150000000, f: 5, n: "Gillespie, TX" },
-                { c: [-97.77, 30.33], d: 200000000, f: 3, n: "Travis, TX" },
-                { c: [-100.45, 31.4], d: 100000000, f: 3, n: "Tom Green, TX" },
-                { c: [-97.6, 30.65], d: 150000000, f: 3, n: "Williamson, TX" },
-                { c: [-98.52, 29.45], d: 200000000, f: 3, n: "Bexar, TX" },
-                { c: [-99.75, 29.35], d: 100000000, f: 4, n: "Uvalde, TX" },
-                { c: [-100.3, 30.05], d: 80000000, f: 3, n: "Edwards, TX" },
-                { c: [-90.2, 38.63], d: 300000000, f: 2, n: "St. Louis City, MO" },
-                { c: [-90.45, 38.65], d: 200000000, f: 1, n: "St. Louis, MO" },
-                { c: [-90.55, 38.25], d: 150000000, f: 1, n: "Jefferson, MO" },
-                { c: [-91.05, 38.4], d: 100000000, f: 1, n: "Franklin, MO" },
-                { c: [-90.9, 37.95], d: 80000000, f: 0, n: "Washington, MO" },
-                { c: [-82.6, 35.6], d: 500000000, f: 3, n: "Buncombe, NC" },
-                { c: [-77.95, 35.95], d: 200000000, f: 2, n: "Nash, NC" },
-                { c: [-77.9, 35.7], d: 150000000, f: 1, n: "Wilson, NC" },
-                { c: [-77.6, 35.9], d: 150000000, f: 1, n: "Edgecombe, NC" },
-                { c: [-75.85, 35.75], d: 200000000, f: 2, n: "Dare, NC" },
-                { c: [-76.15, 35.4], d: 150000000, f: 1, n: "Hyde, NC" },
-                { c: [-82.6, 28.3], d: 400000000, f: 3, n: "Pasco, FL" },
-                { c: [-82.75, 27.85], d: 400000000, f: 3, n: "Pinellas, FL" },
-                { c: [-79.95, 32.8], d: 200000000, f: 2, n: "Charleston, SC" },
-                { c: [-79.95, 33.2], d: 150000000, f: 1, n: "Berkeley, SC" },
-                { c: [-80.2, 33.05], d: 100000000, f: 1, n: "Dorchester, SC" }
-            ],
-            2026: [
-                { c: [-95.39, 29.76], d: 2000000000, f: 9, n: "Harris, TX" },
-                { c: [-95.75, 29.55], d: 800000000, f: 2, n: "Fort Bend, TX" },
-                { c: [-95.5, 30.3], d: 500000000, f: 1, n: "Montgomery, TX" },
-                { c: [-95.6, 29.05], d: 400000000, f: 1, n: "Brazoria, TX" },
-                { c: [-94.8, 29.3], d: 600000000, f: 2, n: "Galveston, TX" },
-                { c: [-94.13, 30.08], d: 400000000, f: 1, n: "Jefferson, TX" },
-                { c: [-93.75, 30.1], d: 300000000, f: 1, n: "Orange, TX" },
-                { c: [-93.35, 30.2], d: 600000000, f: 2, n: "Calcasieu, LA" },
-                { c: [-93.2, 29.8], d: 500000000, f: 3, n: "Cameron, LA" },
-                { c: [-92.15, 29.85], d: 300000000, f: 1, n: "Vermilion, LA" },
-                { c: [-91.85, 29.85], d: 200000000, f: 1, n: "Iberia, LA" },
-                { c: [-91.6, 29.65], d: 300000000, f: 1, n: "St. Mary, LA" },
-                { c: [-89.95, 29.95], d: 800000000, f: 3, n: "Orleans, LA" },
-                { c: [-90.1, 29.85], d: 600000000, f: 2, n: "Jefferson, LA" },
-                { c: [-90.4, 29.5], d: 400000000, f: 2, n: "Lafourche, LA" },
-                { c: [-90.85, 29.35], d: 400000000, f: 3, n: "Terrebonne, LA" },
-                { c: [-122.05, 37.05], d: 400000000, f: 2, n: "Santa Cruz, CA" },
-                { c: [-121.65, 36.6], d: 300000000, f: 2, n: "Monterey, CA" },
-                { c: [-122.85, 38.45], d: 300000000, f: 2, n: "Sonoma, CA" },
-                { c: [-122.3, 38.5], d: 200000000, f: 2, n: "Napa, CA" },
-                { c: [-121.11, 38.55], d: 300000000, f: 2, n: "Sacramento, CA" },
-                { c: [-121.25, 37.95], d: 200000000, f: 2, n: "San Joaquin, CA" },
-                { c: [-119.35, 36.2], d: 200000000, f: 2, n: "Tulare, CA" },
-                { c: [-120.65, 35.5], d: 200000000, f: 1, n: "San Luis Obispo, CA" },
-                { c: [-119.25, 34.35], d: 200000000, f: 2, n: "Ventura, CA" },
-                { c: [-118.25, 34.05], d: 400000000, f: 4, n: "Los Angeles, CA" },
-                { c: [-116.5, 33.75], d: 150000000, f: 2, n: "Riverside, CA" },
-                { c: [-90.45, 32.3], d: 200000000, f: 2, n: "Hinds, MS" }
-            ]
-        };
-
+        // Camera is fully locked: only column clicks (flyTo) and the
+        // "Reset Overview" button are allowed to move it programmatically.
         const map = new mapboxgl.Map({
             container: 'map',
             style: 'mapbox://styles/mapbox/light-v11',
@@ -1034,17 +364,31 @@
             scrollZoom: false,
             boxZoom: false,
             dragRotate: false,
-            keyboard: false,
+            clickZoom: false,
             doubleClickZoom: false,
-            touchZoomRotate: false
+            keyboard: false,
+            touchZoomRotate: false,
+            touchPitch: false,
+            pitchWithRotate: false
         });
 
+        // Embedded copy of the aggregated dataset (flood_data_embedded.js).
+        // It is the same NOAA NCEI + FEMA NRI data as the external JSON and
+        // renders immediately, so the scene works even when the fetch below
+        // cannot run (file:// CORS, offline, 404).
+        const EMBEDDED_TIME_SERIES = (typeof window !== 'undefined' && window.__FLOOD_DATA__) || null;
+
         let timeSeriesData = {};
-        let currentMonth = DEFAULT_MONTH;
+        let universe = null;
+        let yearEntries = null;
+        let yearLoss = null;
+        let cumByYear = null;
+        let universeById = null;
+        let rootIndex = null;
+        let currentYear = 0;
         let isPlaying = false;
         let playInterval = null;
         let deckOverlay = null;
-        let pendingLayer = null;
 
         // --- helpers -------------------------------------------------------
 
@@ -1093,147 +437,265 @@
             return '$' + v;
         }
 
+        function formatCurrency(value) {
+            return '$' + Math.round(Number(value) || 0).toLocaleString('en-US');
+        }
+
         function setSourceLabel(text) {
             document.getElementById('hud-source').innerText = 'SOURCE: ' + text;
         }
 
         function isValidDataset(data) {
             if (!data || typeof data !== 'object' || Array.isArray(data)) return false;
-            return Object.keys(data).some(y => Array.isArray(data[y]) && data[y].length > 0);
+            return Object.keys(data).some(k => /^\d{4}-\d{2}$/.test(k) &&
+                data[k] && Array.isArray(data[k].events) && data[k].events.length > 0);
         }
 
-        const BLUE_LOW = [180, 215, 255, 180];
-        const BLUE_MID = [30, 110, 230, 210];
-        const BLUE_HIGH = [10, 45, 140, 240];
-        const LOG_DAMAGE_MIN = 3;
-        const LOG_DAMAGE_MAX = 9;
+        // Binary scheme: translucent tech blue for regular inland floods,
+        // warning red for flash floods. No damage tiers — every spike shares
+        // one of exactly two colors.
+        const FLOOD_REGULAR_COLOR = [20, 110, 245, 230];
+        const FLOOD_FLASH_COLOR = [235, 30, 45, 240];
 
-        // Monochromatic blue ramp keyed to log10(damage): thousands of dollars
-        // reads as pale ice blue, millions as true blue, 100M+ as deep navy.
-        function blueForDamage(damage) {
-            const d = Number(damage) || 0;
-            if (d <= 0) return BLUE_LOW;
-            const t = Math.min(1, Math.max(0,
-                (Math.log10(d) - LOG_DAMAGE_MIN) / (LOG_DAMAGE_MAX - LOG_DAMAGE_MIN)));
-            const from = t < 0.5 ? BLUE_LOW : BLUE_MID;
-            const to = t < 0.5 ? BLUE_MID : BLUE_HIGH;
-            const k = t < 0.5 ? t * 2 : (t - 0.5) * 2;
-            return [0, 1, 2, 3].map(i => Math.round(from[i] + (to[i] - from[i]) * k));
+        function colorForEvent(e) {
+            return Number(e.t) === 1 ? FLOOD_FLASH_COLOR : FLOOD_REGULAR_COLOR;
         }
 
-        function eventsByYear(year) {
-            const rows = timeSeriesData[year] || [];
-            const map = new Map();
-            rows.forEach(e => {
-                if (Number(e.d) > 0 && !map.has(e.n)) map.set(e.n, e);
-            });
-            return map;
+        function elevationForDamage(d) {
+            return Math.pow(Math.log10(Number(d) + 1), 1.4) * ELEVATION_SCALE;
         }
 
-        let blendCache = {};
-        let universeRows = null;
-
-        // deck.gl tweens between frames by array index. If the row set changed
-        // membership each month, a given index would silently become a different
-        // county and snap to a new position mid-tween. So the layer always draws
-        // a fixed, sorted universe; months where a county has no loss get zero
-        // height and zero alpha, i.e. no visible column at all.
-        function buildUniverse() {
-            if (universeRows) return universeRows;
-            const byName = new Map();
-            Object.keys(timeSeriesData).map(Number).sort((a, b) => a - b).forEach(year => {
-                (timeSeriesData[year] || []).forEach(e => {
-                    if (!byName.has(e.n) && Array.isArray(e.c)) byName.set(e.n, e.c);
-                });
-            });
-            universeRows = Array.from(byName.entries())
-                .map(pair => ({ n: pair[0], c: pair[1] }))
-                .sort((a, b) => (a.n < b.n ? -1 : a.n > b.n ? 1 : 0));
-            return universeRows;
-        }
-
-        // Lerp the two neighbouring year keyframes for the current month, so the
-        // columns grow and shrink continuously instead of snapping once a year.
-        function blendMonth(monthIndex) {
-            const clamped = Math.min(Math.max(monthIndex, 0), TOTAL_MONTHS - 1);
-            if (blendCache.index === clamped) return blendCache.rows;
-
-            // Centre each year's keyframe on mid-year (f - 0.5), so the blend is
-            // continuous across year boundaries. A plain Y -> Y+1 ramp jumps at
-            // New Year, because the last month still carries 1/12 of year Y.
-            const f = YEAR_MIN + clamped / MONTHS_PER_YEAR;
-            const k = f - 0.5;
-            const seed = Math.floor(k);
-            const p = k - seed;
-            const yearA = Math.min(Math.max(seed, YEAR_MIN), YEAR_MAX);
-            const yearB = Math.min(Math.max(seed + 1, YEAR_MIN), YEAR_MAX);
-
-            const from = eventsByYear(yearA);
-            const to = yearB === yearA ? from : eventsByYear(yearB);
-
-            const rows = buildUniverse().map(u => {
-                const a = from.get(u.n);
-                const b = to.get(u.n);
-                return {
-                    c: u.c,
-                    d: (a ? a.d : 0) * (1 - p) + (b ? b.d : 0) * p,
-                    f: (a ? a.f : 0) * (1 - p) + (b ? b.f : 0) * p,
-                    n: u.n
-                };
-            });
-
-            blendCache = { index: clamped, rows: rows };
-            return rows;
-        }
-
-        function monthLabel(monthIndex) {
-            const clamped = Math.min(Math.max(monthIndex, 0), TOTAL_MONTHS - 1);
-            const year = YEAR_MIN + Math.floor(clamped / MONTHS_PER_YEAR);
-            const month = (clamped % MONTHS_PER_YEAR) + 1;
-            return year + ' - Month ' + String(month).padStart(2, '0');
-        }
-
-        function updateLayer() {
-            const rows = blendMonth(currentMonth);
-            const active = rows.filter(e => Number(e.d) > 0);
-            let totalLoss = 0;
-            active.forEach(e => { totalLoss += Number(e.d) || 0; });
-
-            document.getElementById('hud-total-loss').innerText = formatUSD(totalLoss);
-            document.getElementById('hud-event-count').innerText =
-                active.length + ' Recorded Episodes (' + monthLabel(currentMonth) + ')';
-            document.getElementById('year-label').innerText = monthLabel(currentMonth);
-
-            const columnLayer = new deck.ColumnLayer({
-                id: 'flood-spikes',
-                data: rows,
-                getPosition: d => d.c,
-                getElevation: d => Number(d.d) > 0 ? Math.log10(Number(d.d) + 1) * 35000 : 0,
-                radius: 10000,
-                getFillColor: d => Number(d.d) > 0 ? blueForDamage(d.d) : [0, 0, 0, 0],
-                pickable: true,
-                autoHighlight: true,
-                highlightColor: [255, 255, 255, 255],
-                transitions: {
-                    getElevation: { duration: 300, easing: t => t },
-                    getFillColor: { duration: 300, easing: t => t }
-                },
-                onClick: (info) => {
-                    if (info.object && Number(info.object.d) > 0) focusOnSpike(info.object);
+        // Yearly aggregation: within each year, merge every event by
+        // geographic grid + event type, summing raw and CPI-adjusted damage
+        // and counting occurrences. Also keeps per-year cumulative loss.
+        function buildYearData() {
+            if (yearEntries) return;
+            yearEntries = [];
+            yearLoss = [];
+            cumByYear = [];
+            let running = 0;
+            for (let y = 0; y < TOTAL_YEARS; y++) {
+                const merged = new Map();
+                let loss = 0;
+                for (let m = 0; m < 12; m++) {
+                    const key = YEARS[y] + '-' + String(m + 1).padStart(2, '0');
+                    const entry = timeSeriesData[key];
+                    if (!entry) continue;
+                    loss += Number(entry.month_loss) || 0;
+                    (entry.events || []).forEach(e => {
+                        if (!Array.isArray(e.c) || e.c.length < 2) return;
+                        const d = Number(e.d) || 0;
+                        const dc = Number(e.dc) || 0;
+                        if (d <= 0) return;
+                        const t = Number(e.t) === 1 ? 1 : 0;
+                        const ck = e.c[0] + ',' + e.c[1];
+                        const id = ck + '|' + (t === 1 ? 'flash' : 'regular');
+                        const prev = merged.get(id);
+                        if (prev) {
+                            prev.d += d;
+                            prev.dc += dc;
+                            prev.freq += 1;
+                        } else {
+                            merged.set(id, { id, c: e.c.slice(), d, dc, freq: 1, n: e.n, t });
+                        }
+                    });
                 }
-            });
-
-            pendingLayer = columnLayer;
-            if (deckOverlay) {
-                deckOverlay.setProps({ layers: [columnLayer] });
-                // A broken style stops mapbox-gl's render loop, which would
-                // otherwise leave the overlay frozen on its first frame.
-                if (map.triggerRepaint) map.triggerRepaint();
+                yearEntries[y] = merged;
+                yearLoss[y] = loss;
+                running += loss;
+                cumByYear[y] = running;
             }
         }
 
+        // Fixed, sorted universe of every (grid, event-type) pair that ever
+        // recorded loss. Rows never leave the array, so deck.gl tweens
+        // elevation/color by index instead of remapping. Grids hosting both
+        // flood types in some year get the flash column nudged a hair so the
+        // two cylinders never z-fight.
+        function buildUniverse() {
+            if (universe) return universe;
+            const byKey = new Map();
+            yearEntries.forEach(m => {
+                m.forEach(v => {
+                    if (!byKey.has(v.id)) {
+                        byKey.set(v.id, { id: v.id, c: v.c.slice(), ck: v.c[0] + ',' + v.c[1], n: v.n, t: v.t });
+                    }
+                });
+            });
+            const groups = new Map();
+            byKey.forEach(v => {
+                const g = groups.get(v.ck) || [];
+                g.push(v);
+                groups.set(v.ck, g);
+            });
+            groups.forEach(g => {
+                if (g.length > 1) {
+                    const flash = g.find(v => v.t === 1);
+                    if (flash) flash.c[0] += DUAL_TYPE_OFFSET;
+                }
+            });
+            universe = Array.from(byKey.values()).sort((a, b) => (a.c[0] - b.c[0]) || (a.c[1] - b.c[1]));
+            universeById = new Map();
+            rootIndex = new Array(universe.length);
+            universe.forEach((u, i) => {
+                if (!universeById.has(u.ck)) universeById.set(u.ck, i);
+            });
+            for (let i = 0; i < universe.length; i++) rootIndex[i] = universeById.get(universe[i].ck);
+            return universe;
+        }
+
+        // deck.gl v9 update pattern (the one the previously working build
+        // used): each year tick creates fresh layer instances with the same
+        // ids and pushes them through deckOverlay.setProps. Deck diffs by id,
+        // reuses GPU buffers and tweens attributes in place. NOTE:
+        // Layer.setProps() no longer exists in deck.gl v9 — never call it.
+        const GLOW_COLOR_LOW = [255, 220, 80, 110];
+        const GLOW_COLOR_HIGH = [230, 150, 10, 180];
+        const GLOW_RADIUS_MIN = 45000;
+        const GLOW_RADIUS_MAX = 60000;
+        const GLOW_LOG_MAX = 10; // ~$10B CPI-adjusted loss in a single cell
+
+        function glowScale(dc) {
+            return Math.min(1, Math.max(0, Math.log10(Number(dc) + 1) / GLOW_LOG_MAX));
+        }
+
+        function glowRadiusFor(dc) {
+            return GLOW_RADIUS_MIN + glowScale(dc) * (GLOW_RADIUS_MAX - GLOW_RADIUS_MIN);
+        }
+
+        function glowColorFor(dc) {
+            const t = glowScale(dc);
+            return [
+                Math.round(GLOW_COLOR_LOW[0] + (GLOW_COLOR_HIGH[0] - GLOW_COLOR_LOW[0]) * t),
+                Math.round(GLOW_COLOR_LOW[1] + (GLOW_COLOR_HIGH[1] - GLOW_COLOR_LOW[1]) * t),
+                Math.round(GLOW_COLOR_LOW[2] + (GLOW_COLOR_HIGH[2] - GLOW_COLOR_LOW[2]) * t),
+                Math.round(GLOW_COLOR_LOW[3] + (GLOW_COLOR_HIGH[3] - GLOW_COLOR_LOW[3]) * t)
+            ];
+        }
+
+        // Yellow CPI-adjusted loss halo (ScatterplotLayer, under the columns).
+        // One soft flat circle per grid cell; radius 45-60 km and color grow
+        // with log10(CPI loss). Rows follow the stable universe order so deck
+        // tweens radius/color smoothly from year to year.
+        function buildGlowRows(yMap) {
+            const byGrid = new Map();
+            yMap.forEach(v => {
+                const ck = v.c[0] + ',' + v.c[1];
+                byGrid.set(ck, (byGrid.get(ck) || 0) + (Number(v.dc) || 0));
+            });
+            return buildUniverse()
+                .filter((u, i) => rootIndex[i] === i)
+                .map(u => ({ c: u.c, dc: byGrid.get(u.ck) || 0 }));
+        }
+
+        function updateLayer() {
+            // Data must be aggregated and the overlay attached before the
+            // first paint — never draw with a half-ready dataset.
+            if (!deckOverlay || !yearEntries || !yearLoss) {
+                console.warn('[flood] updateLayer skipped: dataset not ready yet');
+                return;
+            }
+
+            const yMap = yearEntries[currentYear] || new Map();
+
+            const rows = buildUniverse().map(u => {
+                const v = yMap.get(u.id);
+                return {
+                    id: u.id,
+                    c: u.c,
+                    d: v ? v.d : 0,
+                    freq: v ? v.freq : 0,
+                    n: v ? v.n : u.n,
+                    t: v ? v.t : u.t
+                };
+            });
+
+            // Density thinning: drop the weakest ~30% of this year's clusters
+            // (by total damage) so the column forest keeps only its core.
+            const activeIdx = [];
+            for (let i = 0; i < rows.length; i++) if (rows[i].d > 0) activeIdx.push(i);
+            activeIdx.sort((a, b) => rows[a].d - rows[b].d);
+            const cut = Math.floor(activeIdx.length * 0.3);
+            for (let k = 0; k < cut; k++) rows[activeIdx[k]].d = 0;
+            const activeCount = activeIdx.length - cut;
+
+            document.getElementById('hud-total-loss').innerText = formatUSD(cumByYear[currentYear]);
+            document.getElementById('hud-event-count').innerText =
+                'Annual Loss in ' + YEARS[currentYear] + ': ' + formatUSD(yearLoss[currentYear]) +
+                ' | ' + activeCount + ' Active Impact Cluster' + (activeCount === 1 ? '' : 's');
+            document.getElementById('year-label').innerText = 'Year ' + YEARS[currentYear];
+
+            try {
+                const glowLayer = new deck.ScatterplotLayer({
+                    id: 'cpi-loss-glow',
+                    data: buildGlowRows(yMap),
+                    getPosition: d => d.c,
+                    getRadius: d => d.dc > 0 ? glowRadiusFor(d.dc) : 0,
+                    getFillColor: d => d.dc > 0 ? glowColorFor(d.dc) : [0, 0, 0, 0],
+                    radiusUnits: 'meters',
+                    billboard: false,
+                    pickable: false,
+                    transitions: {
+                        getRadius: { duration: 1200, easing: EASE_IN_OUT },
+                        getFillColor: { duration: 1200, easing: EASE_IN_OUT }
+                    }
+                });
+
+                const columnLayer = new deck.ColumnLayer({
+                    id: 'flood-spikes',
+                    data: rows,
+                    getPosition: d => d.c,
+                    getElevation: d => d.d > 0 ? elevationForDamage(d.d) : 0,
+                    radius: COLUMN_RADIUS,
+                    getFillColor: d => d.d > 0 ? colorForEvent(d) : [0, 0, 0, 0],
+                    pickable: true,
+                    autoHighlight: true,
+                    highlightColor: [255, 255, 255, 255],
+                    transitions: {
+                        getElevation: { duration: 1200, easing: EASE_IN_OUT },
+                        getFillColor: { duration: 1200 }
+                    },
+                    onClick: (info) => {
+                        if (info.object && Number(info.object.d) > 0) focusOnSpike(info.object);
+                    }
+                });
+
+                // Glow halo first, columns on top.
+                deckOverlay.setProps({ layers: [glowLayer, columnLayer] });
+
+                // A broken style stops mapbox-gl's render loop, which would
+                // otherwise leave the overlay frozen on its first frame.
+                if (map.triggerRepaint) map.triggerRepaint();
+            } catch (err) {
+                console.error('[flood] layer update failed for ' + YEARS[currentYear] + ':', err);
+            }
+        }
+
+        // Re-aggregate from a fresh dataset (embedded copy or fetched JSON).
+        // Every derived cache is reset first so a swap never mixes years.
+        function applyDataset(data, origin) {
+            if (!isValidDataset(data)) {
+                console.warn('[flood] applyDataset: invalid or empty dataset from ' + origin);
+                return false;
+            }
+            timeSeriesData = data;
+            yearEntries = null;
+            yearLoss = null;
+            cumByYear = null;
+            universe = null;
+            universeById = null;
+            rootIndex = null;
+            buildYearData();
+            buildUniverse();
+            setSourceLabel('NOAA NCEI & FEMA NRI');
+            updateLayer();
+            console.info('[flood] dataset ready from ' + origin + ' (' +
+                Object.keys(data).length + ' months)');
+            return true;
+        }
+
         function onYearChange(val) {
-            currentMonth = Math.round((parseFloat(val) - YEAR_MIN) * MONTHS_PER_YEAR);
+            currentYear = Math.min(TOTAL_YEARS - 1, Math.max(0, Math.round(parseFloat(val)) - YEAR_MIN));
             updateLayer();
         }
 
@@ -1243,8 +705,8 @@
             if (isPlaying) {
                 btn.innerText = '❚❚';
                 playInterval = setInterval(() => {
-                    currentMonth = currentMonth >= TOTAL_MONTHS - 1 ? 0 : currentMonth + 1;
-                    document.getElementById('year-slider').value = YEAR_MIN + currentMonth / MONTHS_PER_YEAR;
+                    currentYear = currentYear >= TOTAL_YEARS - 1 ? 0 : currentYear + 1;
+                    document.getElementById('year-slider').value = YEARS[currentYear];
                     updateLayer();
                 }, PLAY_STEP_MS);
             } else {
@@ -1258,15 +720,19 @@
                 center: obj.c,
                 zoom: FOCUS_VIEW.zoom,
                 pitch: FOCUS_VIEW.pitch,
-                bearing: map.getBearing() + 20,
+                bearing: 0,
                 speed: 1.2,
                 curve: 1.4,
                 essential: true
             });
 
             document.getElementById('card-location').innerText = obj.n;
-            document.getElementById('card-damage').innerText = formatUSD(obj.d);
-            document.getElementById('card-deaths').innerText = obj.f;
+            document.getElementById('card-type').innerText =
+                Number(obj.t) === 1 ? 'Flash Flood' : 'Regular Inland Flood';
+            document.getElementById('card-damage-label').innerText = 'Property Damage:';
+            document.getElementById('card-damage').innerText = formatCurrency(obj.d);
+            document.getElementById('card-events').innerText =
+                (Number(obj.freq) || 0) + ' events in ' + YEARS[currentYear];
             document.getElementById('detail-card').style.display = 'block';
         }
 
@@ -1295,10 +761,81 @@
             hideMapNotice();
             map.setFog({
                 'color': 'rgb(255, 255, 255)',
-                'high-color': 'rgb(235, 240, 248)',
+                'high-color': 'rgb(240, 244, 250)',
                 'space-color': 'rgb(255, 255, 255)',
-                'horizon-blend': 0.05
+                'horizon-blend': 0.04
             });
+
+            try {
+                // Label denoise: the US keeps its country name, state names
+                // and top hub cities; Canada/Mexico/Cuba keep only their
+                // single country-level name. Counties, towns, villages, minor
+                // roads, route shields, airports and POIs are silenced
+                // everywhere. Each rule is defensive — layers the style lacks
+                // are skipped rather than throwing.
+                const layoutNone = (id) => {
+                    if (map.getLayer(id)) map.setLayoutProperty(id, 'visibility', 'none');
+                };
+                const setFilterIf = (id, filter) => {
+                    if (map.getLayer(id)) map.setFilter(id, filter);
+                };
+
+                layoutNone('settlement-subdivision-label');
+                layoutNone('road-number-shield');
+                layoutNone('airport-label');
+                layoutNone('poi-label');
+                layoutNone('transit-label');
+                layoutNone('golf-label');
+                layoutNone('water-point-label');
+
+                setFilterIf('state-label', ['==', ['get', 'iso_3166_1'], 'US']);
+                setFilterIf('settlement-label', ['all',
+                    ['==', ['get', 'iso_3166_1'], 'US'],
+                    ['<=', ['get', 'filterrank'], 0]
+                ]);
+                setFilterIf('road-label', ['in', ['get', 'class'],
+                    ['literal', ['motorway', 'trunk', 'primary']]
+                ]);
+
+                // Bold slate outline along every border segment touching the US.
+                map.addLayer({
+                    id: 'us-border-outline',
+                    type: 'line',
+                    source: 'composite',
+                    'source-layer': 'admin',
+                    filter: ['all',
+                        ['==', ['get', 'admin_level'], 0],
+                        ['any',
+                            ['==', ['get', 'iso_3166_1'], 'US'],
+                            ['==', ['get', 'iso_3166_1_2'], 'US']
+                        ]
+                    ],
+                    paint: {
+                        'line-color': '#4a5568',
+                        'line-width': 2.5
+                    }
+                }, 'country-label');
+
+                // Matching coastline outline where maritime admin lines exist.
+                map.addLayer({
+                    id: 'us-coast-outline',
+                    type: 'line',
+                    source: 'composite',
+                    'source-layer': 'admin',
+                    filter: ['all',
+                        ['==', ['get', 'admin_level'], 0],
+                        ['==', ['get', 'maritime'], 'true'],
+                        ['==', ['get', 'iso_3166_1'], 'US']
+                    ],
+                    paint: {
+                        'line-color': '#4a5568',
+                        'line-width': 2.5,
+                        'line-opacity': 0.85
+                    }
+                }, 'country-label');
+            } catch (e) {
+                console.warn('Boundary styling unavailable:', e);
+            }
         });
 
         map.on('error', (e) => {
@@ -1314,32 +851,37 @@
             );
         });
 
-        // Render the built-in dataset immediately so the globe is never empty,
-        // then swap in the external file if it loads cleanly.
-        timeSeriesData = fallbackData;
-        setSourceLabel('BUILT-IN (2001-2026)');
-        updateLayer();
+        // 1) Render the embedded copy of the dataset immediately, so the
+        //    columns exist before any network round-trip (file:// included).
+        // 2) Then fetch the external JSON — the exact same path and field
+        //    names as the previously working build — and swap it in when it
+        //    loads cleanly. A failed fetch never blanks the scene.
+        let rendered = false;
+        if (EMBEDDED_TIME_SERIES) {
+            rendered = applyDataset(EMBEDDED_TIME_SERIES, 'embedded copy');
+        } else {
+            console.warn('[flood] embedded dataset (flood_data_embedded.js) missing — waiting for fetch');
+        }
 
-        fetch('flood_timeseries_1996_2026.json')
+        fetch('flood_timeseries_aggregated.json')
                 .then(res => {
                     if (!res.ok) throw new Error('HTTP ' + res.status);
                     return res.json();
                 })
                 .then(data => {
                     if (!isValidDataset(data)) throw new Error('Empty or malformed dataset');
-                    // Merge over the built-in set so any year the external file
-                    // omits (e.g. 2002) still renders instead of going blank.
-                    timeSeriesData = Object.assign({}, fallbackData, data);
-                    universeRows = null;
-                    blendCache = {};
-                    setSourceLabel('EXTERNAL DATASET');
-                    updateLayer();
+                    rendered = applyDataset(data, 'flood_timeseries_aggregated.json') || rendered;
                 })
                 .catch(err => {
-                    // Network error, CORS block (file://), 404 or empty payload:
-                    // stay on the built-in dataset so the map keeps rendering.
-                    console.warn('External flood dataset unavailable, using built-in data:', err.message);
-                    setSourceLabel('BUILT-IN FALLBACK (2001-2026)');
+                    console.warn('[flood] external dataset unavailable:', err.message);
+                    if (!rendered) {
+                        setSourceLabel('DATASET UNAVAILABLE');
+                        document.getElementById('hud-event-count').innerText = 'Dataset unavailable';
+                        showMapNotice('Dataset unavailable: flood_timeseries_aggregated.json could not be loaded (' +
+                            err.message + ').');
+                    } else {
+                        console.info('[flood] continuing with embedded dataset');
+                    }
                 });
     </script>
 </body>
