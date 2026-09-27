@@ -183,5 +183,8 @@ cython_debug/
 data/raw_data/
 AGENTS.md
 /docs/agents
+data/raw/
+data/hma/
+data/geo/
 
 PublicAssistanceFundedProjectsDetails.csv
