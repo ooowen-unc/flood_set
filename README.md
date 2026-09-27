@@ -4,7 +4,6 @@
 
 Carolina Data Challenge 2026 · Theme: *AI for Social Good*
 
-[Devpost](TODO) · [Video demo](TODO) · [Slides](TODO) · [Live 3D explorer](TODO)
 
 ![Flood property damage by county, 1999-2025](outputs/flood_maps/flood_damage_by_year.gif)
 
