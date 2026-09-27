@@ -1,3 +1,3 @@
-bin,events,pct_with_damage,mean_damage,median_damage_if_damaged,total_damage_M,deaths,injuries,deaths_per_1000_events,share_of_events_pct,share_of_damage_pct,share_of_deaths_pct
-Flash Flood,73431,35.847,1249780.512,16503.734,91772.633,1404,632,19.12,60.803,70.146,74.246
-Flood,47337,28.5,825129.656,20122.165,39059.163,487,249,10.288,39.197,29.854,25.754
+bin,events,with_damage_estimate,pct_with_damage,mean_damage,median_damage_if_damaged,total_damage_M,deaths,injuries,deaths_per_1000_events,share_of_events_pct,share_of_damage_pct,share_of_deaths_pct
+Flash Flood,98225,83408,41.57,1320716.989,23703.398,110158.363,1762,1416,17.938,61.355,69.225,74.472
+Flood,61869,52174,33.628,938658.729,30557.501,48973.581,604,423,9.763,38.645,30.775,25.528

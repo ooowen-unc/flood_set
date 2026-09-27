@@ -1,5 +1,5 @@
 """
-Flood damage vs. severity, NOAA Storm Events, 2007-2025 (Flood + Flash Flood only).
+Flood damage vs. severity, NOAA Storm Events (Flood + Flash Flood only). Default period 1999-2025.
 
 Question: how does flood property damage scale with how severe a flood is?
 
@@ -12,20 +12,24 @@ Storm Events has no magnitude field for floods, so severity is measured with pro
     Cause       FLOOD_CAUSE (heavy rain, tropical system, dam/levee break, ...)
     Type        Flash Flood vs Flood
 
-Why 2007-2025: NWS changed how Storm Data is entered in late 2006. Before 2007 about
-70% of flood damage fields are blank and almost no flood has coordinates, so damage
-before and after is not comparable.
+Period: set with --start-year / --end-year (default 1999-2025, matching the team's data).
+Caveat for years before 2007: NWS changed how Storm Data is entered in late 2006. Before
+2007 about 60-70% of flood damage fields are blank (counted here as $0) and almost no
+flood has coordinates, so damage in 1999-2006 is under-recorded and extent is missing.
+Events recorded by NWS forecast zone (CZ_TYPE "Z", mostly before 2007) get no county FIPS.
 
 Usage (from the repo root):
     python scripts/flood_damage_severity.py --raw-dir data/raw --cpi CPIAUCSL.csv
 
     --raw-dir   folder with StormEvents_details-*.csv or .csv.gz (searched recursively)
-    --cpi       FRED CPIAUCSL csv; damage is converted to 2025 dollars.
+    --cpi       FRED CPIAUCSL csv (monthly). Damage is converted to the prices of
+                --base-month (default 2026-08, the same base as the team's
+                adjust_flood_cpi.py) using each event's begin month.
                 If the file is missing, damage stays in nominal dollars.
     --out       output folder (default: outputs/flood_severity)
 
 Outputs:
-    flood_events_2007_2025.csv.gz   one row per flood event with every severity proxy
+    flood_events.csv.gz             one row per flood event with every severity proxy
     tables/*.csv                    one summary table per proxy + stats.csv
     figures/*.png                   charts for slides
     FINDINGS.md                     the numbers written out, regenerated on every run
@@ -44,11 +48,11 @@ import numpy as np
 import pandas as pd
 from scipy import stats
 
-YEAR_MIN, YEAR_MAX = 2007, 2025
-BASE_YEAR = 2025
+YEAR_MIN, YEAR_MAX = 1999, 2025   # overridden by --start-year / --end-year
+BASE_MONTH = "2026-08"   # same price base as scripts/adjust_flood_cpi.py
 FLOOD_TYPES = ["Flash Flood", "Flood"]
 
-COLS = ["EVENT_ID", "EPISODE_ID", "YEAR", "STATE", "STATE_FIPS", "CZ_FIPS", "CZ_NAME",
+COLS = ["EVENT_ID", "EPISODE_ID", "YEAR", "STATE", "STATE_FIPS", "CZ_TYPE", "CZ_FIPS", "CZ_NAME",
         "EVENT_TYPE", "BEGIN_DATE_TIME", "END_DATE_TIME",
         "DAMAGE_PROPERTY", "DAMAGE_CROPS", "DEATHS_DIRECT", "INJURIES_DIRECT", "FLOOD_CAUSE",
         "BEGIN_LAT", "BEGIN_LON", "END_LAT", "END_LON", "EVENT_NARRATIVE"]
@@ -93,18 +97,22 @@ def parse_damage(series):
     return out.astype(float)
 
 
-def cpi_factors(cpi_path):
-    """Return {year: multiplier to BASE_YEAR dollars}, or None if there is no CPI file."""
+def cpi_factors(cpi_path, base_month):
+    """Return {(year, month): multiplier to base-month prices}, or None if there is no CPI file."""
     if not cpi_path or not os.path.exists(cpi_path):
         return None
     cpi = pd.read_csv(cpi_path)
     date_col, val_col = cpi.columns[0], cpi.columns[1]
-    cpi["year"] = pd.to_datetime(cpi[date_col]).dt.year
-    cpi[val_col] = pd.to_numeric(cpi[val_col], errors="coerce")
-    annual = cpi.groupby("year")[val_col].mean()
-    if BASE_YEAR not in annual.index:
-        raise ValueError(f"CPI file has no {BASE_YEAR} values")
-    return (annual[BASE_YEAR] / annual).to_dict()
+    when = pd.to_datetime(cpi[date_col])
+    vals = pd.to_numeric(cpi[val_col], errors="coerce")
+    monthly = pd.Series(vals.values, index=list(zip(when.dt.year, when.dt.month)))
+    # Oct 2025 CPI was never published (government shutdown). Like adjust_flood_cpi.py,
+    # fill a single missing month with the mean of its two neighbours.
+    monthly = monthly.fillna((monthly.shift(1) + monthly.shift(-1)) / 2).dropna()
+    by, bm = (int(x) for x in base_month.split("-"))
+    if (by, bm) not in monthly.index:
+        raise ValueError(f"CPI file has no value for base month {base_month}")
+    return (monthly[(by, bm)] / monthly).to_dict()
 
 
 def haversine_miles(lat1, lon1, lat2, lon2):
@@ -127,7 +135,7 @@ def depth_from_narrative(text):
     return ft.where(ft <= 40)                                   # drop implausible values
 
 
-def load(raw_dir, cpi_path):
+def load(raw_dir, cpi_path, base_month=BASE_MONTH):
     files = find_detail_files(raw_dir)
     if not files:
         raise SystemExit(f"No StormEvents_details files for {YEAR_MIN}-{YEAR_MAX} under {raw_dir}")
@@ -138,26 +146,34 @@ def load(raw_dir, cpi_path):
     df = pd.concat(parts, ignore_index=True)
     df = df[df["YEAR"].between(YEAR_MIN, YEAR_MAX) & df["STATE"].isin(STATES)].copy()
 
-    factors = cpi_factors(cpi_path)
+    fmt = "%d-%b-%y %H:%M:%S"
+    start = pd.to_datetime(df["BEGIN_DATE_TIME"], format=fmt, errors="coerce")
+    factors = cpi_factors(cpi_path, base_month)
     if factors is None:
         df["cpi_factor"] = 1.0
         dollars = "nominal dollars (no CPI file found)"
     else:
-        df["cpi_factor"] = df["YEAR"].map(factors)
-        dollars = f"{BASE_YEAR} dollars (CPI-U adjusted)"
+        keys = list(zip(start.dt.year, start.dt.month))
+        df["cpi_factor"] = [factors.get(k, np.nan) for k in keys]
+        if df["cpi_factor"].isna().any():
+            raise ValueError("Some event months have no CPI value")
+        dollars = f"{pd.Timestamp(base_month + '-01'):%b %Y} dollars (CPI-U)"
     df["damage_property"] = parse_damage(df["DAMAGE_PROPERTY"]).fillna(0.0) * df["cpi_factor"]
     df["damage_crops"] = parse_damage(df["DAMAGE_CROPS"]).fillna(0.0) * df["cpi_factor"]
     df["damage"] = df["damage_property"]                       # main measure
+    # blank damage = no estimate made (common before 2007). Keep the event (deaths, footprint,
+    # totals need it) but leave it out of per-event damage averages and shares.
+    df["damage_reported"] = df["DAMAGE_PROPERTY"].notna()
 
-    fmt = "%d-%b-%y %H:%M:%S"
-    start = pd.to_datetime(df["BEGIN_DATE_TIME"], format=fmt, errors="coerce")
     end = pd.to_datetime(df["END_DATE_TIME"], format=fmt, errors="coerce")
     df["begin_time"] = start
     df["duration_h"] = (end - start).dt.total_seconds() / 3600
     df["extent_mi"] = haversine_miles(df["BEGIN_LAT"], df["BEGIN_LON"], df["END_LAT"], df["END_LON"])
     df["depth_ft"] = depth_from_narrative(df["EVENT_NARRATIVE"])
     df["episode_counties"] = df.groupby("EPISODE_ID")["EVENT_ID"].transform("count")
-    df["county_fips"] = (df["STATE_FIPS"].astype(int) * 1000 + df["CZ_FIPS"].astype(int)).astype(str).str.zfill(5)
+    # only county-type records (CZ_TYPE "C") carry a county FIPS; forecast zones ("Z") do not
+    fips = (df["STATE_FIPS"].astype(int) * 1000 + df["CZ_FIPS"].astype(int)).astype(str).str.zfill(5)
+    df["county_fips"] = fips.where(df["CZ_TYPE"] == "C")
     df["FLOOD_CAUSE"] = df["FLOOD_CAUSE"].fillna("Unknown")
 
     print(f"Loaded {len(df):,} flood events ({', '.join(FLOOD_TYPES)}) from {len(files)} files, "
@@ -168,10 +184,12 @@ def load(raw_dir, cpi_path):
 # ----------------------------------------------------------------------------- stats
 def summarize(x, bin_col="bin", count_name="events"):
     g = x.groupby(bin_col, observed=True)
+    r = x[x["damage_reported"]].groupby(bin_col, observed=True)["damage"]
     out = pd.DataFrame({
         count_name: g.size(),
-        "pct_with_damage": g["damage"].apply(lambda s: (s > 0).mean() * 100),
-        "mean_damage": g["damage"].mean(),
+        "with_damage_estimate": g["damage_reported"].sum(),
+        "pct_with_damage": r.apply(lambda s: (s > 0).mean() * 100),
+        "mean_damage": r.mean(),
         "median_damage_if_damaged": g["damage"].apply(lambda s: s[s > 0].median()),
         "total_damage_M": g["damage"].sum() / 1e6,
         "deaths": g["DEATHS_DIRECT"].sum(),
@@ -186,7 +204,7 @@ def summarize(x, bin_col="bin", count_name="events"):
 
 def fit_row(name, x, col, unit):
     """Spearman on all rows + log-log fit on rows with damage > 0 and severity > 0."""
-    x = x[x[col].notna()]
+    x = x[x[col].notna() & x["damage_reported"]]
     rho, p = stats.spearmanr(x[col], x["damage"])
     d = x[(x["damage"] > 0) & (x[col] > 0)]
     fit = stats.linregress(np.log(d[col]), np.log(d["damage"]))
@@ -292,27 +310,33 @@ def concentration_chart(conc, title, subtitle, path):
 
 # ----------------------------------------------------------------------------- main
 def main():
+    global YEAR_MIN, YEAR_MAX
     ap = argparse.ArgumentParser()
     ap.add_argument("--raw-dir", default="data/raw")
     ap.add_argument("--cpi", default="CPIAUCSL.csv")
     ap.add_argument("--out", default="outputs/flood_severity")
+    ap.add_argument("--base-month", default=BASE_MONTH, help="CPI price base, YYYY-MM")
+    ap.add_argument("--start-year", type=int, default=YEAR_MIN)
+    ap.add_argument("--end-year", type=int, default=YEAR_MAX)
     args = ap.parse_args()
+    YEAR_MIN, YEAR_MAX = args.start_year, args.end_year
     tab_dir, fig_dir = os.path.join(args.out, "tables"), os.path.join(args.out, "figures")
     os.makedirs(tab_dir, exist_ok=True)
     os.makedirs(fig_dir, exist_ok=True)
 
-    df, dollars = load(args.raw_dir, args.cpi)
+    df, dollars = load(args.raw_dir, args.cpi, args.base_month)
     span = f"{YEAR_MIN}-{YEAR_MAX}"
 
     # event-level file for teammates (map, AI summaries, ...)
     keep = ["EVENT_ID", "EPISODE_ID", "YEAR", "begin_time", "STATE", "county_fips", "CZ_NAME",
             "EVENT_TYPE", "FLOOD_CAUSE", "BEGIN_LAT", "BEGIN_LON", "END_LAT", "END_LON",
-            "damage_property", "damage_crops", "DEATHS_DIRECT", "INJURIES_DIRECT",
+            "damage_property", "damage_crops", "damage_reported", "DEATHS_DIRECT", "INJURIES_DIRECT",
             "duration_h", "extent_mi", "depth_ft", "episode_counties", "cpi_factor"]
-    df[keep].to_csv(os.path.join(args.out, f"flood_events_{YEAR_MIN}_{YEAR_MAX}.csv.gz"), index=False)
+    df[keep].to_csv(os.path.join(args.out, "flood_events.csv.gz"), index=False)
 
     # 1) footprint: one row per episode
     ep = df.groupby("EPISODE_ID").agg(counties=("EVENT_ID", "count"), damage=("damage", "sum"),
+                                      damage_reported=("damage_reported", "max"),
                                       DEATHS_DIRECT=("DEATHS_DIRECT", "sum"),
                                       INJURIES_DIRECT=("INJURIES_DIRECT", "sum"))
     ep["bin"] = pd.cut(ep["counties"], [1, 2, 4, 8, 16, np.inf], right=False,
@@ -353,17 +377,18 @@ def main():
     st.to_csv(os.path.join(tab_dir, "stats.csv"), index=False)
 
     # concentration of damage in the largest events
-    dmg = df["damage"].sort_values(ascending=False).values
+    rep = df[df["damage_reported"]]
+    dmg = rep["damage"].sort_values(ascending=False).values
     total = dmg.sum()
     conc = pd.DataFrame([{"group": lbl, "share_of_events_pct": q * 100,
                           "share_of_damage_pct": dmg[: max(int(len(dmg) * q), 1)].sum() / total * 100}
                          for lbl, q in [("Costliest 0.1% of events", 0.001),
                                         ("Costliest 1% of events", 0.01),
                                         ("Costliest 10% of events", 0.10)]])
-    trop = df["FLOOD_CAUSE"].eq("Heavy Rain / Tropical System")
+    trop = rep["FLOOD_CAUSE"].eq("Heavy Rain / Tropical System")
     conc.loc[len(conc)] = {"group": "Floods from tropical systems",
                            "share_of_events_pct": trop.mean() * 100,
-                           "share_of_damage_pct": df.loc[trop, "damage"].sum() / total * 100}
+                           "share_of_damage_pct": rep.loc[trop, "damage"].sum() / total * 100}
     conc.round(2).to_csv(os.path.join(tab_dir, "concentration.csv"), index=False)
 
     # charts
@@ -405,6 +430,10 @@ def main():
 
 
 def write_findings(out_dir, dollars, df, tables, st, conc):
+    pre, post = df[df["YEAR"] < 2007], df[df["YEAR"] >= 2007]
+    pre_blank = pre["DAMAGE_PROPERTY"].isna().mean() * 100 if len(pre) else 0
+    post_blank = post["DAMAGE_PROPERTY"].isna().mean() * 100 if len(post) else 0
+    pre_zone = (pre["CZ_TYPE"] != "C").mean() * 100 if len(pre) else 0
     t_foot, t_ext, t_dep, t_dur, t_cause, t_type = (tables[k] for k in
         ["by_episode_footprint", "by_extent", "by_water_depth", "by_duration", "by_cause", "by_type"])
     s = st.set_index("proxy")
@@ -434,7 +463,7 @@ Money is property damage in {dollars}. Every number is recomputed on each run; d
 - **Wide floods are also far deadlier:** {t_foot['deaths_per_1000_episodes'].iloc[-1]:.0f} deaths per 1,000 episodes at 16+ counties vs {t_foot['deaths_per_1000_episodes'].iloc[0]:.0f} for one county. 16+ county episodes are {t_foot['share_of_episodes_pct'].iloc[-1]:.1f}% of episodes but {t_foot['share_of_damage_pct'].iloc[-1]:.0f}% of damage and {t_foot['share_of_deaths_pct'].iloc[-1]:.0f}% of deaths.
 - **Extent and depth point the same way.** Floods spanning 10+ miles average {money(t_ext['mean_damage'].iloc[-1])} vs {money(t_ext['mean_damage'].iloc[0])} under half a mile. Where the narrative quotes a depth, 8+ ft floods average {money(t_dep['mean_damage'].iloc[-1])} vs {money(t_dep['mean_damage'].iloc[0])} under 1 ft.
 - **Cause matters:** floods from tropical systems average {money(t_cause.iloc[0]['mean_damage'])} per event; they are {c.loc['Floods from tropical systems', 'share_of_events_pct']:.1f}% of events and {c.loc['Floods from tropical systems', 'share_of_damage_pct']:.0f}% of damage.
-- **Extremely concentrated:** the costliest 1% of events carry {c.loc['Costliest 1% of events', 'share_of_damage_pct']:.0f}% of all flood damage; the costliest 0.1% carry {c.loc['Costliest 0.1% of events', 'share_of_damage_pct']:.0f}%.
+- **Extremely concentrated:** the costliest 1% of events (with a damage estimate) carry {c.loc['Costliest 1% of events', 'share_of_damage_pct']:.0f}% of all flood damage; the costliest 0.1% carry {c.loc['Costliest 0.1% of events', 'share_of_damage_pct']:.0f}%.
 - **Flash floods kill more:** {int(ff['deaths']):,} deaths ({ff['deaths_per_1000_events']:.1f} per 1k events) vs {int(fl['deaths']):,} for river/areal floods ({fl['deaths_per_1000_events']:.1f} per 1k).
 
 ## By episode footprint (counties hit by one flood episode)
@@ -473,7 +502,9 @@ Money is property damage in {dollars}. Every number is recomputed on each run; d
 Elasticity = % change in damage for a 1% change in the proxy. R² values are modest: each proxy explains part of the variation, and damage also depends on what the water hits (homes, roads, farmland).
 
 ## Caveats
-
+""" + (f"""
+- **Years before 2007 are under-recorded.** {pre_blank:.0f}% of {YEAR_MIN}-2006 flood events have a blank damage field, vs {post_blank:.0f}% from 2007 on. Blank = no estimate: those events are kept for counts, deaths and flood size, add $0 to totals, and are left out of per-event damage averages and shares,
+  and {pre_zone:.0f}% of {YEAR_MIN}-2006 events were recorded by forecast zone rather than county (no county FIPS). Treat {YEAR_MIN}-2006 damage totals as a lower bound.""" if YEAR_MIN < 2007 else "") + """
 - **No direct flood magnitude.** Storm Events has no flood gauge height or rainfall field; all six measures are proxies.
 - **Footprint and extent are partly scale, not intensity.** A wide flood can be shallow. They measure how much area is exposed.
 - **Depth covers few events** and comes from free-text narratives parsed with a regex. An LLM could extract depth (and rainfall, rescues, homes flooded) from many more narratives; this is a natural AI extension.
