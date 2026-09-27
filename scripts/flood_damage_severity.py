@@ -512,7 +512,7 @@ Elasticity = % change in damage for a 1% change in the proxy. R² values are mod
 - **Averages are driven by a few huge events** (e.g. Harvey 2017). Medians of damaged events are shown next to them.
 - **Deaths use DEATHS_DIRECT only.**
 """
-    with open(os.path.join(out_dir, "FINDINGS.md"), "w") as fh:
+    with open(os.path.join(out_dir, "FINDINGS.md"), "w", encoding="utf-8") as fh:
         fh.write(text)
 
 

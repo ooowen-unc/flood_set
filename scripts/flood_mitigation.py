@@ -329,7 +329,7 @@ Full list: `tables/priority_counties.csv`.
 - Projects can lag the floods they respond to; FY and flood years are compared over the same {END - START + 1}-year window.
 - Associations, not causes.
 """
-    with open(os.path.join(out, "FINDINGS.md"), "w") as fh:
+    with open(os.path.join(out, "FINDINGS.md"), "w", encoding="utf-8") as fh:
         fh.write(text)
 
 

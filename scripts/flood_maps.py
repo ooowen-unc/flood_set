@@ -99,7 +99,7 @@ def prepare(events_path, nri_path=None):
 
 def load_counties(cache):
     if os.path.exists(cache):
-        with open(cache) as fh:
+        with open(cache, encoding="utf-8") as fh:
             return json.load(fh)
     print(f"Downloading county shapes from {COUNTIES_URL} ...")
     try:
