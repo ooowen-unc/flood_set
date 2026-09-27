@@ -1,4 +1,3 @@
-"""Small sklearn factories and shared scoring; no work at import time."""
 import math
 from time import perf_counter
 

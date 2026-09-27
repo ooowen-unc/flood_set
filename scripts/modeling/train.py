@@ -1,8 +1,3 @@
-"""Train/compare funding and top-two strategy models. Run explicitly to fit.
-
-All learned preprocessing uses fitting counties only. Funding candidates have
-calibrated intervals before selection; final calibration/test stay independent.
-"""
 import argparse
 import json
 import platform

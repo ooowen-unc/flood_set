@@ -1,4 +1,3 @@
-"""County-group cross-validation on development data; never uses final test rows."""
 import numpy as np
 
 from config import LABELS, TARGET

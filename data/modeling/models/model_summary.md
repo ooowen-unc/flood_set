@@ -1,71 +1,123 @@
-# 洪水灾后援助与防治措施模型：最终结果
+# Flood Policy Model Data
 
-输入洪水类型（Flood / Flash Flood）、县 FIPS、影响等级（1–3），参考年份默认2025。查询县人口、社会脆弱性、韧性和既有措施背景，输出PA累计援助额上下界，并从收购、排水、建筑抬升、防洪工程中推荐两项。
+## Dataset
 
-## 数据与训练方法
+| Field | Value |
+| --- | --- |
+| County-year records | 36,450 |
+| Split seed | 42 |
+| Features | 17 |
+| Funding target | `pa_flood_incident_federal_share_obligated_nominal_usd` |
+| Nominal interval coverage | 80.00% |
 
-使用1999–2025年的36,450条县年度记录。按县随机分成约70%训练、15%验证、15%测试，种子42；同一县不跨集合。两个任务分别使用标签有效的样本，资金未记录值不填零，措施仅在至少记录四类之一的年度学习历史选择。
+| Split | Rows | Counties |
+| --- | ---: | ---: |
+| train | 25,507 | 2,214 |
+| validation | 5,366 | 474 |
+| test | 5,577 | 475 |
 
-- 有效资金样本：训练1347，验证选优127，独立校准127，测试262。
-- 有效措施样本：训练1642，验证369，测试352。
-- 使用17个特征，包括等级、年份、洪水类型、县背景和此前结项项目计数。规模特征取log1p；中位数填补缺失值并加入缺失指示，线性模型标准化。预处理仅在相应训练部分拟合。
-- 资金比较中位数基线、弹性网络、随机森林、分位数梯度提升树，在log1p(金额)上拟合。候选均先在训练集内部按县分出独立数据校准区间，再以验证集的log1p区间评分选优；选定后用完整训练集重训，并使用另一些验证县完成最终校准。目标覆盖率80.00%。
-- 措施比较历史频率基线、多标签逻辑回归、多标签随机森林。四类措施采用独立二分类器，按分数选择前两项；验证集按Recall@2、再按宏平均AP选优。固定参数比较，测试集仅作最终评估。
+## Labeled Samples
 
-## 最终算法与测试结果
+| Task | Subset | Samples |
+| --- | --- | ---: |
+| Funding | train | 1,347 |
+| Funding | selection | 127 |
+| Funding | calibration | 127 |
+| Funding | test | 262 |
+| Funding | preliminary_fit | 1,060 |
+| Funding | preliminary_calibration | 287 |
+| Measures | train | 1,642 |
+| Measures | validation | 369 |
+| Measures | test | 352 |
 
-**资金：弹性网络（elastic_net）**。alpha=0.01，l1_ratio=0.25。
-**措施：多标签逻辑回归（logistic）**。l1_ratio=0.0，C=1。
+## Selected Models
 
-| 任务 | 指标 | 最终模型 | 基线 |
+| Task | Algorithm | Parameters |
+| --- | --- | --- |
+| Funding | elastic_net | alpha=0.01, l1_ratio=0.25 |
+| Measures | logistic | l1_ratio=0.0, C=1 |
+
+## Test Metrics
+
+| Task | Metric | Selected model | Baseline |
 | --- | --- | ---: | ---: |
-| 资金 | 区间覆盖率 | 78.63% | 79.39% |
-| 资金 | 区间宽度中位数（万美元） | 223.89 | 350.14 |
-| 资金 | 美元区间评分（万美元，越低越好） | 634.86 | 738.76 |
-| 措施 | Recall@2 | 84.47% | 81.87% |
-| 措施 | 至少命中一项 | 87.78% | 86.93% |
-| 措施 | 宏平均F1 | 0.473 | 0.304 |
-| 措施 | 宏平均AP / ROC-AUC | 0.500 / 0.727 | 0.286 / 0.500 |
+| Funding | Interval coverage | 78.63% | 79.39% |
+| Funding | Median interval width (nominal USD) | 2238862.55 | 3501411.96 |
+| Funding | Mean interval score (nominal USD) | 6348586.73 | 7387640.47 |
+| Measures | Recall@2 | 84.47% | 81.87% |
+| Measures | Any hit@2 | 87.78% | 86.93% |
+| Measures | Macro F1 | 0.473 | 0.304 |
+| Measures | Macro AP | 0.500 | 0.286 |
+| Measures | Macro ROC-AUC | 0.727 | 0.500 |
 
-| 措施 | 测试正例数 | F1 | AP | ROC-AUC |
+## Per-Measure Test Metrics
+
+| Measure | Positive samples | F1 | AP | ROC-AUC |
 | --- | ---: | ---: | ---: | ---: |
-| 收购并退出洪泛区 | 211 | 0.800 | 0.822 | 0.791 |
-| 排水与雨洪管理 | 107 | 0.491 | 0.615 | 0.791 |
-| 建筑抬升 | 48 | 0.290 | 0.234 | 0.606 |
-| 防洪工程 | 36 | 0.310 | 0.329 | 0.720 |
+| Property acquisition and floodplain retreat | 211 | 0.800 | 0.822 | 0.791 |
+| Drainage and stormwater management | 107 | 0.491 | 0.615 | 0.791 |
+| Building elevation | 48 | 0.290 | 0.234 | 0.606 |
+| Flood control infrastructure | 36 | 0.310 | 0.329 | 0.720 |
 
-## 稳定性
+## Cross-Validation
 
-训练与验证集合共2688个县，进行3折县级交叉验证，每折单独学习等级阈值和预处理，并保留独立资金校准县。以下为折均值±折间标准差，不是置信区间。交叉验证不使用最终测试集，也不重新选择算法。
+| Field | Value |
+| --- | --- |
+| Development counties | 2,688 |
+| Folds | 3 |
+| Unit | county |
 
-- 资金覆盖率：83.86% ± 2.47个百分点；区间宽度中位数的折均值：323.38万美元。
-- 措施Recall@2：82.32% ± 1.46个百分点；宏平均F1：0.443 ± 0.017。
+| Task | Metric | Fold mean | Fold sample standard deviation |
+| --- | --- | ---: | ---: |
+| Funding | empirical_interval_coverage | 0.838641 | 0.024652 |
+| Funding | median_interval_width_nominal_usd | 3233769.305151 | 484322.296908 |
+| Funding | mean_interval_score_nominal_usd | 14152547.499109 | 2694538.505515 |
+| Funding | mean_interval_score_log1p | 5.828274 | 0.062560 |
+| Measures | recall_at_2 | 0.823227 | 0.014609 |
+| Measures | f1_macro | 0.442849 | 0.017166 |
+| Measures | macro_average_precision | 0.515064 | 0.042709 |
+| Measures | macro_roc_auc | 0.725067 | 0.037607 |
 
-## 查询输出示例
+## Example Prediction
 
-Robeson县（37155），Flash Flood，影响等级3，参考年2025。
-人口116,414；社会脆弱性分数98.35；韧性分数14.09。既有措施背景取2024年，计数为此前结项项目覆盖记录。
-既有措施记录：收购并退出洪泛区 3，排水与雨洪管理 0，建筑抬升 0，防洪工程 0。
+| Field | Value |
+| --- | --- |
+| County | Robeson |
+| County FIPS | 37155 |
+| Flood type | Flash Flood |
+| Impact level | 3 |
+| Reference year | 2025 |
+| Prior-measure context year | 2024 |
+| nri_population | 116414.00 |
+| nri_buildvalue | 20676381604.00 |
+| nri_agrivalue | 496647982.00 |
+| nri_area | 958.84 |
+| nri_sovi_score | 98.35 |
+| nri_resl_score | 14.09 |
+| nri_ifld_risks | 86.39 |
+| nri_ifld_afreq | 0.71 |
+| Funding lower bound (nominal USD) | 261,497.59 |
+| Funding upper bound (nominal USD) | 8,722,002.28 |
 
-**累计援助额参考范围：261,497.59–8,722,002.28美元。**
+| Prior measure | Closed project records |
+| --- | ---: |
+| Property acquisition and floodplain retreat | 3 |
+| Drainage and stormwater management | 0 |
+| Building elevation | 0 |
+| Flood control infrastructure | 0 |
 
-1. 收购并退出洪泛区，排序分数0.6996。
-2. 排水与雨洪管理，排序分数0.3536。
+| Rank | Recommended measure | Ranking score |
+| ---: | --- | ---: |
+| 1 | Property acquisition and floodplain retreat | 0.6996 |
+| 2 | Drainage and stormwater management | 0.3536 |
 
-## 使用范围与产物
+## Data Files
 
-适合历史政策关联查询和项目原型。资金是明确Flood类PA项目的联邦累计承诺快照，按灾害声明年归集，保留名义美元；不是年度支付或所有机构援助。措施得分表示历史选择排序，不代表效果或采用概率。NRI为静态快照；影响等级为训练损失分位数与伤亡构造的内部等级。随机县测试和交叉验证不证明未来预测或因果效果。
-
-- [模型文件](<E:/Programs/GitHub/26datachallenge/data/modeling/models/flood_policy.joblib>)
-- [完整指标、算法参数和稳定性报告](<E:/Programs/GitHub/26datachallenge/data/modeling/models/training_report.json>)
-- [资金测试预测表](<E:/Programs/GitHub/26datachallenge/data/modeling/models/funding_test_predictions.csv>)（实际金额、上下界、是否覆盖）
-- [措施测试预测表](<E:/Programs/GitHub/26datachallenge/data/modeling/models/measure_test_predictions.csv>)（历史标签、四类得分、两项推荐）
-- [完整示例查询JSON](<E:/Programs/GitHub/26datachallenge/data/modeling/models/example_prediction.json>)
-
-## 运行
-
-```powershell
-python scripts/modeling/train.py --overwrite
-python scripts/modeling/export_summary.py
-python scripts/modeling/predict.py --county-fips 37155 --flood-type "Flash Flood" --impact-level severe
-```
+| Artifact | File |
+| --- | --- |
+| Model | [flood_policy.joblib](<E:/Programs/GitHub/26datachallenge/data/modeling/models/flood_policy.joblib>) |
+| Training report | [training_report.json](<E:/Programs/GitHub/26datachallenge/data/modeling/models/training_report.json>) |
+| Funding test predictions | [funding_test_predictions.csv](<E:/Programs/GitHub/26datachallenge/data/modeling/models/funding_test_predictions.csv>) |
+| Measure test predictions | [measure_test_predictions.csv](<E:/Programs/GitHub/26datachallenge/data/modeling/models/measure_test_predictions.csv>) |
+| Measure test curves | [measure_test_curves.json](<E:/Programs/GitHub/26datachallenge/data/modeling/models/measure_test_curves.json>) |
+| Example prediction | [example_prediction.json](<E:/Programs/GitHub/26datachallenge/data/modeling/models/example_prediction.json>) |

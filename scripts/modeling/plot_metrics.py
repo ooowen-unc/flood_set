@@ -1,4 +1,3 @@
-"""Draw four-class PR/ROC comparisons from saved curve data; never trains."""
 import argparse
 import json
 from pathlib import Path

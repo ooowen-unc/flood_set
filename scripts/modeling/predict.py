@@ -1,4 +1,3 @@
-"""Query county background and return a PA interval plus exactly two measures."""
 import argparse
 import json
 import re
@@ -13,7 +12,8 @@ from config import ARTIFACTS, BACKGROUND, MEASURES, MEASURE_NAMES, PRIOR, SOURCE
 from data import features, read_data
 from models import regression_logs, strategy_scores, top_two
 
-LEVELS = {"light": 1, "moderate": 2, "severe": 3, "轻": 1, "中": 2, "重": 3}
+LEVELS = {"light": 1, "moderate": 2, "severe": 3}
+LEVEL_ALIASES = {"轻": "light", "中": "moderate", "重": "severe"}
 
 
 def finite_value(value):
@@ -94,7 +94,8 @@ def main():
     parser.add_argument("--source", type=Path, default=SOURCE)
     parser.add_argument("--county-fips", required=True)
     parser.add_argument("--flood-type", choices=("Flood", "Flash Flood"), required=True)
-    parser.add_argument("--impact-level", choices=tuple(LEVELS), required=True)
+    parser.add_argument("--impact-level", type=lambda value: LEVEL_ALIASES.get(value, value),
+                        choices=tuple(LEVELS), required=True)
     parser.add_argument("--year", type=int, default=2025)
     args = parser.parse_args()
     result = predict(args.model, args.source, args.county_fips, args.flood_type, LEVELS[args.impact_level], args.year)

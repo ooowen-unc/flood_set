@@ -1,8 +1,3 @@
-"""Split ALL annual rows without fitting models or learning preprocessing rules.
-
-Uses the standard library only. County grouping is the default; row shuffling
-is optional. Raw columns, blanks, leading zeros and original row order survive.
-"""
 import argparse
 import csv
 import hashlib

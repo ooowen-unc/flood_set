@@ -1,4 +1,3 @@
-"""Export a concise final model document and one reproducible scenario query."""
 import argparse
 import json
 from pathlib import Path
@@ -6,18 +5,13 @@ from pathlib import Path
 from config import ARTIFACTS, MEASURE_NAMES, SOURCE
 from predict import predict
 
-FUNDING_NAMES = {"median_baseline": "中位数基线", "elastic_net": "弹性网络",
-                 "random_forest": "随机森林回归", "quantile_gbdt": "分位数梯度提升树"}
-MEASURE_NAMES_ALGORITHM = {"frequency_baseline": "历史频率基线", "logistic": "多标签逻辑回归",
-                           "random_forest": "多标签随机森林"}
-
 
 def pct(value):
-    return f"{value * 100:.2f}%"
+    return f"{value * 100:.2f}%" if value is not None else "N/A"
 
 
 def number(value, spec=".2f"):
-    return format(value, spec) if value is not None else "未匹配"
+    return format(value, spec) if value is not None else "N/A"
 
 
 def local_link(label, path):
@@ -27,10 +21,10 @@ def local_link(label, path):
 def algorithm_parameters(description):
     heads = description.get("heads", {})
     if not heads:
-        return "训练集四类措施出现频率"
+        return "training_label_prevalence=" + json.dumps(description.get("training_label_prevalence"))
     params = next(iter(heads.values()))["parameters"]
-    keys = ("n_estimators", "max_depth", "min_samples_leaf", "learning_rate", "subsample", "alpha", "l1_ratio", "C")
-    return "，".join(f"{key}={params[key]}" for key in keys if key in params) or "训练集金额中位数"
+    keys = ("n_estimators", "max_depth", "min_samples_leaf", "learning_rate", "subsample", "alpha", "l1_ratio", "C", "strategy")
+    return ", ".join(f"{key}={params[key]}" for key in keys if key in params) or "N/A"
 
 
 def export_summary(output_dir, source=SOURCE, *, county_fips="37155", flood_type="Flash Flood", impact_level=3, year=2025):
@@ -43,61 +37,89 @@ def export_summary(output_dir, source=SOURCE, *, county_fips="37155", flood_type
     fd = funding["all_models"][names[0]]["description"]
     md = measures["all_models"][names[1]]["description"]
     lines = [
-        "# 洪水灾后援助与防治措施模型：最终结果", "",
-        "输入洪水类型（Flood / Flash Flood）、县 FIPS、影响等级（1–3），参考年份默认2025。"
-        "查询县人口、社会脆弱性、韧性和既有措施背景，输出PA累计援助额上下界，并从收购、排水、建筑抬升、防洪工程中推荐两项。", "",
-        "## 数据与训练方法", "",
-        f"使用1999–2025年的{sum(s['rows'] for s in report['split_sizes'].values()):,}条县年度记录。按县随机分成约70%训练、15%验证、15%测试，种子{report['split_seed']}；同一县不跨集合。"
-        "两个任务分别使用标签有效的样本，资金未记录值不填零，措施仅在至少记录四类之一的年度学习历史选择。", "",
-        f"- 有效资金样本：训练{sizes['funding_train']}，验证选优{sizes['funding_selection']}，独立校准{sizes['funding_calibration']}，测试{sizes['funding_test']}。",
-        f"- 有效措施样本：训练{sizes['measures']['train']}，验证{sizes['measures']['validation']}，测试{sizes['measures']['test']}。",
-        f"- 使用{len(report['features'])}个特征，包括等级、年份、洪水类型、县背景和此前结项项目计数。规模特征取log1p；中位数填补缺失值并加入缺失指示，线性模型标准化。预处理仅在相应训练部分拟合。",
-        f"- 资金比较中位数基线、弹性网络、随机森林、分位数梯度提升树，在log1p(金额)上拟合。候选均先在训练集内部按县分出独立数据校准区间，再以验证集的log1p区间评分选优；选定后用完整训练集重训，并使用另一些验证县完成最终校准。目标覆盖率{pct(funding['nominal_interval_coverage'])}。",
-        "- 措施比较历史频率基线、多标签逻辑回归、多标签随机森林。四类措施采用独立二分类器，按分数选择前两项；验证集按Recall@2、再按宏平均AP选优。固定参数比较，测试集仅作最终评估。", "",
-        "## 最终算法与测试结果", "",
-        f"**资金：{FUNDING_NAMES[names[0]]}（{names[0]}）**。{algorithm_parameters(fd)}。",
-        f"**措施：{MEASURE_NAMES_ALGORITHM[names[1]]}（{names[1]}）**。{algorithm_parameters(md)}。", "",
-        "| 任务 | 指标 | 最终模型 | 基线 |", "| --- | --- | ---: | ---: |",
-        f"| 资金 | 区间覆盖率 | {pct(ft['empirical_interval_coverage'])} | {pct(funding['test_median_baseline']['empirical_interval_coverage'])} |",
-        f"| 资金 | 区间宽度中位数（万美元） | {ft['median_interval_width_nominal_usd']/10000:.2f} | {funding['test_median_baseline']['median_interval_width_nominal_usd']/10000:.2f} |",
-        f"| 资金 | 美元区间评分（万美元，越低越好） | {ft['mean_interval_score_nominal_usd']/10000:.2f} | {funding['test_median_baseline']['mean_interval_score_nominal_usd']/10000:.2f} |",
-        f"| 措施 | Recall@2 | {pct(mt['recall_at_2'])} | {pct(measures['test_frequency_baseline']['recall_at_2'])} |",
-        f"| 措施 | 至少命中一项 | {pct(mt['any_hit_at_2'])} | {pct(measures['test_frequency_baseline']['any_hit_at_2'])} |",
-        f"| 措施 | 宏平均F1 | {mt['f1_macro']:.3f} | {measures['test_frequency_baseline']['f1_macro']:.3f} |",
-        f"| 措施 | 宏平均AP / ROC-AUC | {mt['macro_average_precision']:.3f} / {mt['macro_roc_auc']:.3f} | {measures['test_frequency_baseline']['macro_average_precision']:.3f} / {measures['test_frequency_baseline']['macro_roc_auc']:.3f} |", "",
-        "| 措施 | 测试正例数 | F1 | AP | ROC-AUC |", "| --- | ---: | ---: | ---: | ---: |",
+        "# Flood Policy Model Data", "",
+        "## Dataset", "",
+        "| Field | Value |", "| --- | --- |",
+        f"| County-year records | {sum(s['rows'] for s in report['split_sizes'].values()):,} |",
+        f"| Split seed | {report['split_seed']} |",
+        f"| Features | {len(report['features'])} |",
+        f"| Funding target | `{funding['target']}` |",
+        f"| Nominal interval coverage | {pct(funding['nominal_interval_coverage'])} |", "",
+        "| Split | Rows | Counties |", "| --- | ---: | ---: |",
     ]
+    for split, size in report["split_sizes"].items():
+        lines.append(f"| {split} | {size['rows']:,} | {size['counties']:,} |")
+    lines += ["", "## Labeled Samples", "",
+              "| Task | Subset | Samples |", "| --- | --- | ---: |"]
+    for key, count in sizes.items():
+        if key.startswith("funding_"):
+            lines.append(f"| Funding | {key.removeprefix('funding_')} | {count:,} |")
+    for split, count in sizes["measures"].items():
+        lines.append(f"| Measures | {split} | {count:,} |")
+    lines += ["", "## Selected Models", "",
+              "| Task | Algorithm | Parameters |", "| --- | --- | --- |",
+              f"| Funding | {names[0]} | {algorithm_parameters(fd)} |",
+              f"| Measures | {names[1]} | {algorithm_parameters(md)} |", "",
+              "## Test Metrics", "",
+              "| Task | Metric | Selected model | Baseline |", "| --- | --- | ---: | ---: |"]
+    metrics = [
+        ("Funding", "Interval coverage", "empirical_interval_coverage", ft, funding["test_median_baseline"], pct),
+        ("Funding", "Median interval width (nominal USD)", "median_interval_width_nominal_usd", ft, funding["test_median_baseline"], number),
+        ("Funding", "Mean interval score (nominal USD)", "mean_interval_score_nominal_usd", ft, funding["test_median_baseline"], number),
+        ("Measures", "Recall@2", "recall_at_2", mt, measures["test_frequency_baseline"], pct),
+        ("Measures", "Any hit@2", "any_hit_at_2", mt, measures["test_frequency_baseline"], pct),
+        ("Measures", "Macro F1", "f1_macro", mt, measures["test_frequency_baseline"], lambda v: number(v, ".3f")),
+        ("Measures", "Macro AP", "macro_average_precision", mt, measures["test_frequency_baseline"], lambda v: number(v, ".3f")),
+        ("Measures", "Macro ROC-AUC", "macro_roc_auc", mt, measures["test_frequency_baseline"], lambda v: number(v, ".3f")),
+    ]
+    for task, label, key, selected, baseline, formatter in metrics:
+        lines.append(f"| {task} | {label} | {formatter(selected[key])} | {formatter(baseline[key])} |")
+    lines += ["", "## Per-Measure Test Metrics", "",
+              "| Measure | Positive samples | F1 | AP | ROC-AUC |", "| --- | ---: | ---: | ---: | ---: |"]
     for measure, row in mt["per_measure"].items():
-        lines.append(f"| {MEASURE_NAMES[measure]} | {row['positive_support']} | {row['f1']:.3f} | {row['average_precision']:.3f} | {row['roc_auc']:.3f} |")
+        lines.append(f"| {MEASURE_NAMES[measure]} | {row['positive_support']} | {number(row['f1'], '.3f')} | {number(row['average_precision'], '.3f')} | {number(row['roc_auc'], '.3f')} |")
     stability = report.get("stability")
     if stability:
-        fc, mc = stability["funding"][names[0]], stability["measures"][names[1]]
-        lines += ["", "## 稳定性", "",
-                  f"训练与验证集合共{stability['development_counties']}个县，进行{stability['folds']}折县级交叉验证，每折单独学习等级阈值和预处理，并保留独立资金校准县。以下为折均值±折间标准差，不是置信区间。交叉验证不使用最终测试集，也不重新选择算法。", "",
-                  f"- 资金覆盖率：{pct(fc['empirical_interval_coverage']['mean'])} ± {fc['empirical_interval_coverage']['std']*100:.2f}个百分点；区间宽度中位数的折均值：{fc['median_interval_width_nominal_usd']['mean']/10000:.2f}万美元。",
-                  f"- 措施Recall@2：{pct(mc['recall_at_2']['mean'])} ± {mc['recall_at_2']['std']*100:.2f}个百分点；宏平均F1：{mc['f1_macro']['mean']:.3f} ± {mc['f1_macro']['std']:.3f}。"]
+        lines += ["", "## Cross-Validation", "",
+                  "| Field | Value |", "| --- | --- |",
+                  f"| Development counties | {stability['development_counties']:,} |",
+                  f"| Folds | {stability['folds']} |",
+                  f"| Unit | {stability['unit']} |", "",
+                  "| Task | Metric | Fold mean | Fold sample standard deviation |", "| --- | --- | ---: | ---: |"]
+        for task, name in zip(("funding", "measures"), names):
+            for metric, values in stability[task][name].items():
+                lines.append(f"| {task.title()} | {metric} | {number(values['mean'], '.6f')} | {number(values['std'], '.6f')} |")
     background, interval = result["county_background"], result["pa_cumulative_assistance_reference"]
-    values = background["static_values"]
-    lines += ["", "## 查询输出示例", "",
-              f"{background['county_name']}县（{county_fips}），{flood_type}，影响等级{impact_level}，参考年{year}。",
-              f"人口{number(values['nri_population'], ',.0f')}；社会脆弱性分数{number(values['nri_sovi_score'])}；韧性分数{number(values['nri_resl_score'])}。既有措施背景取{background['prior_measure_context_year']}年，计数为此前结项项目覆盖记录。",
-              "既有措施记录：" + "，".join(f"{MEASURE_NAMES[name]} {number(count, '.0f')}" for name, count in background['prior_closed_projects_by_measure'].items()) + "。", "",
-              f"**累计援助额参考范围：{interval['lower_usd']:,.2f}–{interval['upper_usd']:,.2f}美元。**", ""]
+    lines += ["", "## Example Prediction", "",
+              "| Field | Value |", "| --- | --- |",
+              f"| County | {background['county_name']} |",
+              f"| County FIPS | {county_fips} |",
+              f"| Flood type | {flood_type} |",
+              f"| Impact level | {impact_level} |",
+              f"| Reference year | {year} |",
+              f"| Prior-measure context year | {background['prior_measure_context_year']} |"]
+    for field, value in background["static_values"].items():
+        lines.append(f"| {field} | {number(value)} |")
+    lines += [f"| Funding lower bound (nominal USD) | {number(interval['lower_usd'], ',.2f')} |",
+              f"| Funding upper bound (nominal USD) | {number(interval['upper_usd'], ',.2f')} |", "",
+              "| Prior measure | Closed project records |", "| --- | ---: |"]
+    for measure, count in background["prior_closed_projects_by_measure"].items():
+        lines.append(f"| {MEASURE_NAMES[measure]} | {number(count, '.0f')} |")
+    lines += ["", "| Rank | Recommended measure | Ranking score |", "| ---: | --- | ---: |"]
     for index, measure in enumerate(result["recommended_measures"], start=1):
-        lines.append(f"{index}. {measure['name']}，排序分数{measure['ranking_score']:.4f}。")
-    lines += ["", "## 使用范围与产物", "",
-              "适合历史政策关联查询和项目原型。资金是明确Flood类PA项目的联邦累计承诺快照，按灾害声明年归集，保留名义美元；不是年度支付或所有机构援助。"
-              "措施得分表示历史选择排序，不代表效果或采用概率。NRI为静态快照；影响等级为训练损失分位数与伤亡构造的内部等级。随机县测试和交叉验证不证明未来预测或因果效果。",
-              "", "- " + local_link("模型文件", output_dir / "flood_policy.joblib"),
-              "- " + local_link("完整指标、算法参数和稳定性报告", output_dir / "training_report.json"),
-              "- " + local_link("资金测试预测表", output_dir / "funding_test_predictions.csv") + "（实际金额、上下界、是否覆盖）",
-              "- " + local_link("措施测试预测表", output_dir / "measure_test_predictions.csv") + "（历史标签、四类得分、两项推荐）",
-              "- " + local_link("完整示例查询JSON", output_dir / "example_prediction.json"),
-              "", "## 运行", "", "```powershell",
-              "python scripts/modeling/train.py --overwrite",
-              "python scripts/modeling/export_summary.py",
-              'python scripts/modeling/predict.py --county-fips 37155 --flood-type "Flash Flood" --impact-level severe',
-              "```", ""]
+        lines.append(f"| {index} | {measure['name']} | {measure['ranking_score']:.4f} |")
+    lines += ["", "## Data Files", "",
+              "| Artifact | File |", "| --- | --- |"]
+    for label, filename in (
+        ("Model", "flood_policy.joblib"),
+        ("Training report", "training_report.json"),
+        ("Funding test predictions", "funding_test_predictions.csv"),
+        ("Measure test predictions", "measure_test_predictions.csv"),
+        ("Measure test curves", "measure_test_curves.json"),
+        ("Example prediction", "example_prediction.json"),
+    ):
+        lines.append(f"| {label} | {local_link(filename, output_dir / filename)} |")
+    lines.append("")
     example_path, summary_path = output_dir / "example_prediction.json", output_dir / "model_summary.md"
     example_path.write_text(json.dumps(result, ensure_ascii=False, indent=2, allow_nan=False) + "\n", encoding="utf-8")
     summary_path.write_text("\n".join(lines), encoding="utf-8")

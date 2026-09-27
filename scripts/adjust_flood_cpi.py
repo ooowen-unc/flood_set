@@ -161,21 +161,21 @@ def main() -> int:
     parser.add_argument("--input", type=Path, default=ROOT / "data/processed_data/flood_final.csv")
     parser.add_argument("--cpi", type=Path, default=ROOT / "CPIAUCSL.csv")
     parser.add_argument("--output", type=Path, default=ROOT / "data/processed_data/flood_final_CPI.csv")
-    parser.add_argument("--base-month", default="2026-08", help="价格基准月份，YYYY-MM")
+    parser.add_argument("--base-month", default="2026-08", help="Price basis month, YYYY-MM")
     parser.add_argument("--missing-cpi", choices=("error", "interpolate"), default="interpolate",
-                        help="缺失 CPI 的处理规则；默认仅对缺失单月用相邻观测插值")
-    parser.add_argument("--overwrite", action="store_true", help="全部成功后替换已有输出")
+                        help="Missing CPI policy; by default, interpolate only isolated missing months using adjacent observations")
+    parser.add_argument("--overwrite", action="store_true", help="Replace existing output after all processing succeeds")
     args = parser.parse_args()
     try:
         summary = adjust_file(args.input, args.cpi, args.output, base_month=args.base_month,
                               missing_cpi=args.missing_cpi, overwrite=args.overwrite)
     except (ValueError, OSError, csv.Error, InvalidOperation) as error:
-        print(f"CPI 调整失败：{error}", file=sys.stderr)
+        print(f"CPI adjustment failed: {error}", file=sys.stderr)
         return 1
-    print(f"调整完成：{summary['rows']:,} 行；价格基准 {summary['base_month']}，CPI={summary['base_cpi']}")
+    print(f"Adjustment complete: {summary['rows']:,} rows; price basis {summary['base_month']}, CPI={summary['base_cpi']}")
     for month, count in summary["interpolated_months"].items():
-        print(f"插值 CPI：{month}={summary['interpolated_values'][month]}，用于 {count:,} 行（cpi_interpolated=1）")
-    print(f"输出：{summary['output_path']}")
+        print(f"Interpolated CPI: {month}={summary['interpolated_values'][month]}, used for {count:,} rows (cpi_interpolated=1)")
+    print(f"Output: {summary['output_path']}")
     return 0
 
 

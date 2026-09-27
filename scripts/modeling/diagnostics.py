@@ -1,4 +1,3 @@
-"""Evaluation and model descriptions. No fitting, threshold tuning or selection."""
 import math
 
 import numpy as np

@@ -43,12 +43,12 @@
   "recommended_measures": [
     {
       "measure": "acquisition",
-      "name": "收购并退出洪泛区",
+      "name": "Property acquisition and floodplain retreat",
       "ranking_score": 0.6996
     },
     {
       "measure": "drainage",
-      "name": "排水与雨洪管理",
+      "name": "Drainage and stormwater management",
       "ranking_score": 0.3536
     }
   ],

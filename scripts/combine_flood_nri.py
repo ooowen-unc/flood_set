@@ -579,14 +579,14 @@ def main() -> int:
     try:
         summary = combine(**vars(args))
     except (ValueError, OSError, csv.Error, InvalidOperation, OverflowError) as error:
-        print(f"结合失败：{error}", file=sys.stderr)
+        print(f"Merge failed: {error}", file=sys.stderr)
         return 1
-    print(f"价格基准：{summary['parameters']['base_month']}；CPI={summary['parameters']['base_cpi']}")
+    print(f"Price basis: {summary['parameters']['base_month']}; CPI={summary['parameters']['base_cpi']}")
     for name, count in summary["row_counts"].items():
-        print(f"{name}: {count:,} 行")
-    print("县连接：" + json.dumps(summary["join_status_counts"], ensure_ascii=False))
-    print("CPI 插值：" + json.dumps(summary["cpi_interpolated_months"], ensure_ascii=False))
-    print(f"输出目录：{args.output_dir.resolve()}")
+        print(f"{name}: {count:,} rows")
+    print("County joins: " + json.dumps(summary["join_status_counts"], ensure_ascii=False))
+    print("CPI interpolation: " + json.dumps(summary["cpi_interpolated_months"], ensure_ascii=False))
+    print(f"Output directory: {args.output_dir.resolve()}")
     return 0
 
 

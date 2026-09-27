@@ -1,4 +1,3 @@
-"""Metric tests use synthetic predictions only; no estimator.fit is called."""
 import json
 import unittest
 

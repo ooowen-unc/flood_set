@@ -1,4 +1,3 @@
-"""One feature definition for both training and scenario prediction."""
 import numpy as np
 import pandas as pd
 

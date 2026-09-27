@@ -1,4 +1,3 @@
-"""Checks for county isolation and the endpoint-only funding selection objective."""
 import unittest
 
 import numpy as np
