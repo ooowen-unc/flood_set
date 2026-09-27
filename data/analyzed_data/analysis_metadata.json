@@ -1,0 +1,96 @@
+{
+  "inputs": [
+    "E:\\Programs\\GitHub\\26datachallenge\\data\\processed_data\\flood_final.csv",
+    "E:\\Programs\\GitHub\\26datachallenge\\NRI_Table_Counties.csv",
+    "E:\\Programs\\GitHub\\26datachallenge\\NRI_Table_Counties_Cleaned.csv",
+    "E:\\Programs\\GitHub\\26datachallenge\\NRI_HazardInfo.csv",
+    "E:\\Programs\\GitHub\\26datachallenge\\NRIDataDictionary.csv",
+    "E:\\Programs\\GitHub\\26datachallenge\\CPIAUCSL.csv"
+  ],
+  "parameters": {
+    "base_month": "2026-08",
+    "base_cpi": "334.131",
+    "nri_price_month": "2024-12",
+    "nri_price_cpi": "317.604",
+    "nri_price_factor": "1.052036498280878074583443533",
+    "missing_cpi": "interpolate",
+    "nri_price_basis_source": "https://www.arcgis.com/home/item.html?id=1cb56c682f6f4ce08a07ff372a7908b0"
+  },
+  "output_grains": {
+    "flood_nri_events.csv": "one row per input event, including unmatched records",
+    "nri_flood_counties.csv": "one row per NRI county and IFLD/CFLD hazard",
+    "flood_nri_county_year.csv": "one row per matched county, EST start year, flood category with retained records"
+  },
+  "row_counts": {
+    "flood_nri_events.csv": 145363,
+    "nri_flood_counties.csv": 6464,
+    "flood_nri_county_year.csv": 37082
+  },
+  "analysis_year_range": [
+    1998,
+    2025
+  ],
+  "join_status_counts": {
+    "matched_county": 132953,
+    "unmatched_connecticut_boundary": 678,
+    "unmatched_county_fips": 357,
+    "unmatched_forecast_zone": 8362,
+    "unmatched_missing_county_fips": 3013
+  },
+  "event_type_counts": {
+    "Coastal Flood": 3384,
+    "Flash Flood": 87101,
+    "Flood": 54527,
+    "Lakeshore Flood": 351
+  },
+  "cpi_interpolated_months": {
+    "2025-10": {
+      "event_records": 296,
+      "cpi": "324.654"
+    }
+  },
+  "adjusted_loss_controls_usd": {
+    "crops_all": "14715563279.31",
+    "crops_matched": "12139312899.22",
+    "crops_unmatched": "2576250380.09",
+    "material_all": "236941901110.55",
+    "material_matched": "166439278465.73",
+    "material_unmatched": "70502622644.82",
+    "property_all": "222226337831.24",
+    "property_matched": "154299965566.51",
+    "property_unmatched": "67926372264.73"
+  },
+  "cleaned_reconciliation": {
+    "authoritative_source": "NRI_Table_Counties.csv",
+    "compared_cells": 74336,
+    "full_only_fips": [],
+    "cleaned_only_fips": [],
+    "different_cells_by_field": {
+      "CFLD_EALB": 2644,
+      "CFLD_EALP": 2644,
+      "CFLD_EALPE": 2644,
+      "CFLD_EALS": 2644,
+      "CFLD_EALT": 2644,
+      "CFLD_RISKS": 2732,
+      "IFLD_RISKS": 88
+    },
+    "policy": "Use full-table values, including blanks; never replace them with cleaned zeros."
+  },
+  "methods_and_limits": [
+    "Input is nominal flood_final.csv; source damage fields are preserved and adjusted columns are separate.",
+    "Flood CPI uses fixed-EST event start month, consistent with adjust_flood_cpi.py. Multimonth losses are not split without observations.",
+    "NRI USD fields use the declared December 2024 price basis; release date December 2025 is not the price month.",
+    "County and hazard joins are many-to-one; NRI snapshots must never be summed over event rows or years.",
+    "Event rows include selected predictors; join (county_fips,nri_hazard_prefix) to nri_flood_counties for complete hazard context. County-year rows already include it.",
+    "Forecast zones and historical county codes are retained as unmatched; no invented allocation. See join status.",
+    "Lakeshore Flood has no assumed IFLD/CFLD equivalence; county context is attached but hazard metrics stay blank.",
+    "No absent county-years are manufactured as zero. Event counts describe the damage-screened flood_final sample.",
+    "Source cleaning removed both-loss-missing records and filled one missing loss component with zero; this table cannot reverse that imputation.",
+    "Source casualty missingness is retained. Annual known-value sums have missing-record counts; incomplete ratios remain blank.",
+    "Missing NRI numbers are not zero. Blank coastal agriculture fields mean not modeled, not zero loss.",
+    "POPULATION is a 2020 snapshot per NRIDataDictionary; asset and social metrics are static snapshots, not historical county-year measures.",
+    "NOAA property damage and NRI building loss differ in scope; loss/EAL ratios are descriptive proxies, not model validation or causal effects.",
+    "Only NRI annualized-frequency hazards receive a historical-period flag. Probability-model dates are not observational windows.",
+    "Annual physical losses exclude monetized population loss; population equivalent USD remains a separate NRI metric."
+  ]
+}

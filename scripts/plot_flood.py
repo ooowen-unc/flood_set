@@ -1,19 +1,3 @@
-"""Draw six basic flood charts from the CPI-adjusted CSV.
-
-Requirements: Python 3.10+ and matplotlib (python -m pip install matplotlib).
-Run from any directory: python scripts/plot_flood.py
-Optional: --input PATH --output-dir PATH --dpi 200
-
-Defaults are relative to this repository, not the current working directory.
-Outputs are PNG files in images/. Reruns replace these six named images.
-The input is read only. Damage columns already contain CPI-adjusted amounts;
-this script does not adjust them again. Annual charts use the source year,
-and monthly charts use the event's start month in fixed EST (UTC-05:00).
-Counts refer to event records, not distinct weather episodes. Cause colors
-show each cause's monthly proportions; annotations show absolute counts.
-Blank causes are excluded and their coverage is reported on the chart.
-"""
-
 from __future__ import annotations
 
 import argparse

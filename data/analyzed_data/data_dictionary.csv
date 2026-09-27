@@ -1,0 +1,218 @@
+﻿table,field,source_field,definition,units
+flood_nri_events.csv,event_id,,Preserved flood_final field.,
+flood_nri_events.csv,episode_id,,Preserved flood_final field.,
+flood_nri_events.csv,event_type,,Preserved flood_final field.,
+flood_nri_events.csv,year,,Preserved flood_final field.,
+flood_nri_events.csv,begin_time_est,,Preserved flood_final field.,
+flood_nri_events.csv,end_time_est,,Preserved flood_final field.,
+flood_nri_events.csv,timezone,,Preserved flood_final field.,
+flood_nri_events.csv,source_timezone,,Preserved flood_final field.,
+flood_nri_events.csv,duration_hours,,Preserved flood_final field.,
+flood_nri_events.csv,state_fips,,Text identifier; preserve leading zeros.,
+flood_nri_events.csv,county_fips,,Text identifier; preserve leading zeros.,
+flood_nri_events.csv,area_type,,Preserved flood_final field.,
+flood_nri_events.csv,area_code,,Preserved flood_final field.,
+flood_nri_events.csv,area_name,,Preserved flood_final field.,
+flood_nri_events.csv,injuries_direct,,Reported NOAA casualty count; annual known-value sum. Check corresponding missing-record count.,
+flood_nri_events.csv,injuries_indirect,,Reported NOAA casualty count; annual known-value sum. Check corresponding missing-record count.,
+flood_nri_events.csv,deaths_direct,,Reported NOAA casualty count; annual known-value sum. Check corresponding missing-record count.,
+flood_nri_events.csv,deaths_indirect,,Reported NOAA casualty count; annual known-value sum. Check corresponding missing-record count.,
+flood_nri_events.csv,damage_property_usd,,Original nominal flood loss; annual sums combine original dollars from event months.,nominal USD (mixed prices for annual sums)
+flood_nri_events.csv,damage_crops_usd,,Original nominal flood loss; annual sums combine original dollars from event months.,nominal USD (mixed prices for annual sums)
+flood_nri_events.csv,flood_cause,,Preserved flood_final field.,
+flood_nri_events.csv,fatality_records,,Preserved flood_final field.,
+flood_nri_events.csv,location_points,,Preserved flood_final field.,
+flood_nri_events.csv,year_is_partial,,Preserved flood_final field.,
+flood_nri_events.csv,core_fields_valid,,Preserved flood_final field.,
+flood_nri_events.csv,analysis_year,,Year of begin_time_est (fixed UTC-05:00); aggregation year.,
+flood_nri_events.csv,event_month,,Month of begin_time_est; entire event loss assigned to its start month.,
+flood_nri_events.csv,flood_category,,Preserved flood_final field.,
+flood_nri_events.csv,nri_hazard_prefix,,Preserved flood_final field.,
+flood_nri_events.csv,nri_join_status,,matched_county or unmatched reason; no geography is guessed or duplicated.,
+flood_nri_events.csv,nri_hazard_mapping_status,,mapped or unmapped_lakeshore; mapping and geographic matching are independent.,
+flood_nri_events.csv,source_year_differs_from_analysis_year,,1 if the source year differs from the EST start year; source year is preserved.,
+flood_nri_events.csv,within_nri_hazard_record_period,,0/1 for annualized-frequency hazards only; blank for probability/unmapped hazards.,
+flood_nri_events.csv,cpi_source_month,,Monthly CPI provenance; source and target price levels are kept explicitly.,
+flood_nri_events.csv,cpi_source_value,,Monthly CPI provenance; source and target price levels are kept explicitly.,
+flood_nri_events.csv,cpi_target_value,,Monthly CPI provenance; source and target price levels are kept explicitly.,
+flood_nri_events.csv,cpi_factor,,CPI target month / CPI event start month; unrounded Decimal calculation.,
+flood_nri_events.csv,cpi_interpolated,,1 only when missing source-month CPI was replaced by the mean of adjacent observed months.,
+flood_nri_events.csv,cpi_base_month,,Monthly CPI provenance; source and target price levels are kept explicitly.,
+flood_nri_events.csv,damage_property_adjusted_usd,,Sum of individually CPI-adjusted event amounts; blanks are not assumed zero.,USD at target-month prices
+flood_nri_events.csv,damage_crops_adjusted_usd,,Sum of individually CPI-adjusted event amounts; blanks are not assumed zero.,USD at target-month prices
+flood_nri_events.csv,damage_material_original_usd,,Original nominal flood loss; annual sums combine original dollars from event months.,nominal USD (mixed prices for annual sums)
+flood_nri_events.csv,damage_material_adjusted_usd,,Sum of individually CPI-adjusted event amounts; blanks are not assumed zero.,USD at target-month prices
+flood_nri_events.csv,nri_id,NRI_ID,"National Risk Index ID; county snapshot, never sum across event rows or years.",
+flood_nri_events.csv,nri_population,POPULATION,"Population (2020); county snapshot, never sum across event rows or years.",people (2020 snapshot per source dictionary)
+flood_nri_events.csv,nri_sovi_score,SOVI_SCORE,"Social Vulnerability - Score; county snapshot, never sum across event rows or years.",
+flood_nri_events.csv,nri_resl_score,RESL_SCORE,"Community Resilience - Score; county snapshot, never sum across event rows or years.",
+flood_nri_events.csv,nri_risks,IFLD_RISKS / CFLD_RISKS,"Inland Flooding - Hazard Type Risk Index Score; county snapshot, never sum across event rows or years.",
+flood_nri_events.csv,nri_riskr,IFLD_RISKR / CFLD_RISKR,"Inland Flooding - Hazard Type Risk Index Rating; county snapshot, never sum across event rows or years.",
+flood_nri_events.csv,nri_buildvalue_adjusted_usd,BUILDVALUE,"Building Value ($); county snapshot, never sum across event rows or years. Converted using CPI(target)/CPI(NRI price month).",USD at target-month prices
+flood_nri_events.csv,nri_agrivalue_adjusted_usd,AGRIVALUE,"Agriculture Value ($); county snapshot, never sum across event rows or years. Converted using CPI(target)/CPI(NRI price month).",USD at target-month prices
+flood_nri_events.csv,nri_ealb_adjusted_usd,IFLD_EALB / CFLD_EALB,"Inland Flooding - Expected Annual Loss - Building Value; county snapshot, never sum across event rows or years. Converted using CPI(target)/CPI(NRI price month).",USD at target-month prices
+flood_nri_events.csv,nri_eala_adjusted_usd,IFLD_EALA,"Inland Flooding - Expected Annual Loss - Agriculture Value; county snapshot, never sum across event rows or years. Converted using CPI(target)/CPI(NRI price month).",USD at target-month prices
+flood_nri_events.csv,nri_material_eal_adjusted_usd,"IFLD_EALB + IFLD_EALA, CPI-adjusted; blank for CFLD","Adjusted EALB + EALA, excluding population equivalence. Blank when either component is missing/not modeled. Converted using CPI(target)/CPI(NRI price month).",USD at target-month prices
+flood_nri_events.csv,nri_ver,,Preserved flood_final field.,
+nri_flood_counties.csv,county_fips,,Text identifier; preserve leading zeros.,
+nri_flood_counties.csv,nri_hazard_prefix,,Grouping key or provenance for this table.,
+nri_flood_counties.csv,nri_id,NRI_ID,"National Risk Index ID; county snapshot, never sum across event rows or years.",
+nri_flood_counties.csv,nri_state,STATE,"State Name; county snapshot, never sum across event rows or years.",
+nri_flood_counties.csv,nri_stateabbrv,STATEABBRV,"State Name Abbreviation; county snapshot, never sum across event rows or years.",
+nri_flood_counties.csv,nri_county,COUNTY,"County Name; county snapshot, never sum across event rows or years.",
+nri_flood_counties.csv,nri_countytype,COUNTYTYPE,"County Type; county snapshot, never sum across event rows or years.",
+nri_flood_counties.csv,nri_population,POPULATION,"Population (2020); county snapshot, never sum across event rows or years.",people (2020 snapshot per source dictionary)
+nri_flood_counties.csv,nri_buildvalue,BUILDVALUE,"Building Value ($); county snapshot, never sum across event rows or years.",USD at NRI source-month prices
+nri_flood_counties.csv,nri_agrivalue,AGRIVALUE,"Agriculture Value ($); county snapshot, never sum across event rows or years.",USD at NRI source-month prices
+nri_flood_counties.csv,nri_area,AREA,"Area (sq mi); county snapshot, never sum across event rows or years.",
+nri_flood_counties.csv,nri_sovi_score,SOVI_SCORE,"Social Vulnerability - Score; county snapshot, never sum across event rows or years.",
+nri_flood_counties.csv,nri_sovi_ratng,SOVI_RATNG,"Social Vulnerability - Rating; county snapshot, never sum across event rows or years.",
+nri_flood_counties.csv,nri_resl_score,RESL_SCORE,"Community Resilience - Score; county snapshot, never sum across event rows or years.",
+nri_flood_counties.csv,nri_resl_ratng,RESL_RATNG,"Community Resilience - Rating; county snapshot, never sum across event rows or years.",
+nri_flood_counties.csv,nri_resl_value,RESL_VALUE,"Community Resilience - Value; county snapshot, never sum across event rows or years.",
+nri_flood_counties.csv,nri_crf_value,CRF_VALUE,"Community Risk Factor - Value; county snapshot, never sum across event rows or years.",
+nri_flood_counties.csv,nri_nri_ver,NRI_VER,"National Risk Index Version; county snapshot, never sum across event rows or years.",
+nri_flood_counties.csv,nri_agrivalue_adjusted_usd,AGRIVALUE,"Agriculture Value ($); county snapshot, never sum across event rows or years. Converted using CPI(target)/CPI(NRI price month).",USD at target-month prices
+nri_flood_counties.csv,nri_buildvalue_adjusted_usd,BUILDVALUE,"Building Value ($); county snapshot, never sum across event rows or years. Converted using CPI(target)/CPI(NRI price month).",USD at target-month prices
+nri_flood_counties.csv,nri_evnts,IFLD_EVNTS / CFLD_EVNTS,"Inland Flooding - Number of Events; county snapshot, never sum across event rows or years.",
+nri_flood_counties.csv,nri_afreq,IFLD_AFREQ / CFLD_AFREQ,"Inland Flooding - Annualized Frequency; county snapshot, never sum across event rows or years.",
+nri_flood_counties.csv,nri_exp_area,IFLD_EXP_AREA / CFLD_EXP_AREA,"Inland Flooding - Exposure - Impacted Area (sq mi); county snapshot, never sum across event rows or years.",
+nri_flood_counties.csv,nri_expb,IFLD_EXPB / CFLD_EXPB,"Inland Flooding - Exposure - Building Value; county snapshot, never sum across event rows or years.",USD at NRI source-month prices
+nri_flood_counties.csv,nri_expb_adjusted_usd,IFLD_EXPB / CFLD_EXPB,"Inland Flooding - Exposure - Building Value; county snapshot, never sum across event rows or years. Converted using CPI(target)/CPI(NRI price month).",USD at target-month prices
+nri_flood_counties.csv,nri_expp,IFLD_EXPP / CFLD_EXPP,"Inland Flooding - Exposure - Population; county snapshot, never sum across event rows or years.","population / population-loss equivalent, not USD"
+nri_flood_counties.csv,nri_exppe,IFLD_EXPPE / CFLD_EXPPE,"Inland Flooding - Exposure - Population Equivalence; county snapshot, never sum across event rows or years.",USD at NRI source-month prices
+nri_flood_counties.csv,nri_exppe_adjusted_usd,IFLD_EXPPE / CFLD_EXPPE,"Inland Flooding - Exposure - Population Equivalence; county snapshot, never sum across event rows or years. Converted using CPI(target)/CPI(NRI price month).",USD at target-month prices
+nri_flood_counties.csv,nri_expa,IFLD_EXPA,"Inland Flooding - Exposure - Agriculture Value; county snapshot, never sum across event rows or years.",USD at NRI source-month prices
+nri_flood_counties.csv,nri_expa_adjusted_usd,IFLD_EXPA,"Inland Flooding - Exposure - Agriculture Value; county snapshot, never sum across event rows or years. Converted using CPI(target)/CPI(NRI price month).",USD at target-month prices
+nri_flood_counties.csv,nri_expt,IFLD_EXPT / CFLD_EXPT,"Inland Flooding - Exposure - Total; county snapshot, never sum across event rows or years.",USD at NRI source-month prices
+nri_flood_counties.csv,nri_expt_adjusted_usd,IFLD_EXPT / CFLD_EXPT,"Inland Flooding - Exposure - Total; county snapshot, never sum across event rows or years. Converted using CPI(target)/CPI(NRI price month).",USD at target-month prices
+nri_flood_counties.csv,nri_hlrb,IFLD_HLRB / CFLD_HLRB,"Inland Flooding - Historic Loss Ratio - Buildings; county snapshot, never sum across event rows or years.",
+nri_flood_counties.csv,nri_hlrp,IFLD_HLRP / CFLD_HLRP,"Inland Flooding - Historic Loss Ratio - Population; county snapshot, never sum across event rows or years.",
+nri_flood_counties.csv,nri_hlra,IFLD_HLRA,"Inland Flooding - Historic Loss Ratio - Agriculture; county snapshot, never sum across event rows or years.",
+nri_flood_counties.csv,nri_hlrr,IFLD_HLRR / CFLD_HLRR,"Inland Flooding - Historic Loss Ratio - Total Rating; county snapshot, never sum across event rows or years.",
+nri_flood_counties.csv,nri_ealb,IFLD_EALB / CFLD_EALB,"Inland Flooding - Expected Annual Loss - Building Value; county snapshot, never sum across event rows or years.",USD at NRI source-month prices
+nri_flood_counties.csv,nri_ealb_adjusted_usd,IFLD_EALB / CFLD_EALB,"Inland Flooding - Expected Annual Loss - Building Value; county snapshot, never sum across event rows or years. Converted using CPI(target)/CPI(NRI price month).",USD at target-month prices
+nri_flood_counties.csv,nri_ealp,IFLD_EALP / CFLD_EALP,"Inland Flooding - Expected Annual Loss - Population; county snapshot, never sum across event rows or years.","population / population-loss equivalent, not USD"
+nri_flood_counties.csv,nri_ealpe,IFLD_EALPE / CFLD_EALPE,"Inland Flooding - Expected Annual Loss - Population Equivalence; county snapshot, never sum across event rows or years.",USD at NRI source-month prices
+nri_flood_counties.csv,nri_ealpe_adjusted_usd,IFLD_EALPE / CFLD_EALPE,"Inland Flooding - Expected Annual Loss - Population Equivalence; county snapshot, never sum across event rows or years. Converted using CPI(target)/CPI(NRI price month).",USD at target-month prices
+nri_flood_counties.csv,nri_eala,IFLD_EALA,"Inland Flooding - Expected Annual Loss - Agriculture Value; county snapshot, never sum across event rows or years.",USD at NRI source-month prices
+nri_flood_counties.csv,nri_eala_adjusted_usd,IFLD_EALA,"Inland Flooding - Expected Annual Loss - Agriculture Value; county snapshot, never sum across event rows or years. Converted using CPI(target)/CPI(NRI price month).",USD at target-month prices
+nri_flood_counties.csv,nri_ealt,IFLD_EALT / CFLD_EALT,"Inland Flooding - Expected Annual Loss - Total; county snapshot, never sum across event rows or years.",USD at NRI source-month prices
+nri_flood_counties.csv,nri_ealt_adjusted_usd,IFLD_EALT / CFLD_EALT,"Inland Flooding - Expected Annual Loss - Total; county snapshot, never sum across event rows or years. Converted using CPI(target)/CPI(NRI price month).",USD at target-month prices
+nri_flood_counties.csv,nri_eals,IFLD_EALS / CFLD_EALS,"Inland Flooding - Expected Annual Loss Score; county snapshot, never sum across event rows or years.",
+nri_flood_counties.csv,nri_ealr,IFLD_EALR / CFLD_EALR,"Inland Flooding - Expected Annual Loss Rating; county snapshot, never sum across event rows or years.",
+nri_flood_counties.csv,nri_alrb,IFLD_ALRB / CFLD_ALRB,"Inland Flooding - Expected Annual Loss Rate - Building; county snapshot, never sum across event rows or years.",
+nri_flood_counties.csv,nri_alrp,IFLD_ALRP / CFLD_ALRP,"Inland Flooding - Expected Annual Loss Rate - Population; county snapshot, never sum across event rows or years.",
+nri_flood_counties.csv,nri_alra,IFLD_ALRA,"Inland Flooding - Expected Annual Loss Rate - Agriculture; county snapshot, never sum across event rows or years.",
+nri_flood_counties.csv,nri_alr_npctl,IFLD_ALR_NPCTL / CFLD_ALR_NPCTL,"Expected Annual Loss Rate - National Percentile - Composite; county snapshot, never sum across event rows or years.",
+nri_flood_counties.csv,nri_risks,IFLD_RISKS / CFLD_RISKS,"Inland Flooding - Hazard Type Risk Index Score; county snapshot, never sum across event rows or years.",
+nri_flood_counties.csv,nri_riskr,IFLD_RISKR / CFLD_RISKR,"Inland Flooding - Hazard Type Risk Index Rating; county snapshot, never sum across event rows or years.",
+nri_flood_counties.csv,nri_material_eal_adjusted_usd,"IFLD_EALB + IFLD_EALA, CPI-adjusted; blank for CFLD","Adjusted EALB + EALA, excluding population equivalence. Blank when either component is missing/not modeled. Converted using CPI(target)/CPI(NRI price month).",USD at target-month prices
+nri_flood_counties.csv,nri_price_source_month,parameter --nri-price-month; FEMA NRI price-basis metadata,"Price basis for NRI dollar fields, independent of release date; default 2024-12 for v1.20.",
+nri_flood_counties.csv,nri_cpi_factor,CPIAUCSL target-month CPI / NRI source-month CPI,CPI target month / CPI NRI price month; applied to USD fields only.,
+nri_flood_counties.csv,nri_price_target_month,parameter --base-month,Target month for CPI-adjusted NRI dollar fields.,
+nri_flood_counties.csv,nri_hazard_name,NRI_HazardInfo.csv: Hazard,HazardInfo hazard name selected by IFLD/CFLD prefix.,
+nri_flood_counties.csv,nri_record_start,NRI_HazardInfo.csv: Start,"HazardInfo Start; for probability models this is a dataset year, not a historical window.",
+nri_flood_counties.csv,nri_record_end,NRI_HazardInfo.csv: End,"HazardInfo End; for probability models this is a dataset year, not a historical window.",
+nri_flood_counties.csv,nri_record_years,NRI_HazardInfo.csv: TotalYears,HazardInfo TotalYears; not the denominator for observed flood_final annual aggregation.,
+nri_flood_counties.csv,nri_frequency_model,NRI_HazardInfo.csv: FrequencyModel,HazardInfo FrequencyModel: Annualized Frequency or Probability.,
+nri_flood_counties.csv,nri_record_description,NRI_HazardInfo.csv: PeriodOfRecord,HazardInfo PeriodOfRecord description; retain the source qualification.,
+flood_nri_county_year.csv,county_fips,,Text identifier; preserve leading zeros.,
+flood_nri_county_year.csv,analysis_year,,Year of begin_time_est (fixed UTC-05:00); aggregation year.,
+flood_nri_county_year.csv,flood_category,,Grouping key or provenance for this table.,
+flood_nri_county_year.csv,nri_hazard_prefix,,Grouping key or provenance for this table.,
+flood_nri_county_year.csv,within_nri_hazard_record_period,,0/1 for annualized-frequency hazards only; blank for probability/unmapped hazards.,
+flood_nri_county_year.csv,cpi_base_month,,Monthly CPI provenance; source and target price levels are kept explicitly.,
+flood_nri_county_year.csv,event_records,,"Retained flood_final records, not complete flood occurrence frequency.",
+flood_nri_county_year.csv,distinct_episode_ids,,Distinct nonmissing NOAA episode identifiers within this county/year/category; not national disaster count.,
+flood_nri_county_year.csv,missing_episode_records,,Grouping key or provenance for this table.,
+flood_nri_county_year.csv,flash_flood_records,,Grouping key or provenance for this table.,
+flood_nri_county_year.csv,flash_flood_record_share,,Flash Flood records / retained records in this county/year/category.,
+flood_nri_county_year.csv,cpi_interpolated_records,,Monthly CPI provenance; source and target price levels are kept explicitly.,
+flood_nri_county_year.csv,year_is_partial,,Grouping key or provenance for this table.,
+flood_nri_county_year.csv,injuries_direct,,Reported NOAA casualty count; annual known-value sum. Check corresponding missing-record count.,
+flood_nri_county_year.csv,injuries_direct_missing_records,,Number of retained records with missing / known values for this metric.,
+flood_nri_county_year.csv,injuries_indirect,,Reported NOAA casualty count; annual known-value sum. Check corresponding missing-record count.,
+flood_nri_county_year.csv,injuries_indirect_missing_records,,Number of retained records with missing / known values for this metric.,
+flood_nri_county_year.csv,deaths_direct,,Reported NOAA casualty count; annual known-value sum. Check corresponding missing-record count.,
+flood_nri_county_year.csv,deaths_direct_missing_records,,Number of retained records with missing / known values for this metric.,
+flood_nri_county_year.csv,deaths_indirect,,Reported NOAA casualty count; annual known-value sum. Check corresponding missing-record count.,
+flood_nri_county_year.csv,deaths_indirect_missing_records,,Number of retained records with missing / known values for this metric.,
+flood_nri_county_year.csv,property_loss_known_records,,Number of retained records with missing / known values for this metric.,
+flood_nri_county_year.csv,property_loss_original_usd,,Original nominal flood loss; annual sums combine original dollars from event months.,nominal USD (mixed prices for annual sums)
+flood_nri_county_year.csv,property_loss_adjusted_usd,,Sum of individually CPI-adjusted event amounts; blanks are not assumed zero.,USD at target-month prices
+flood_nri_county_year.csv,crops_loss_known_records,,Number of retained records with missing / known values for this metric.,
+flood_nri_county_year.csv,crops_loss_original_usd,,Original nominal flood loss; annual sums combine original dollars from event months.,nominal USD (mixed prices for annual sums)
+flood_nri_county_year.csv,crops_loss_adjusted_usd,,Sum of individually CPI-adjusted event amounts; blanks are not assumed zero.,USD at target-month prices
+flood_nri_county_year.csv,material_loss_known_records,,Number of retained records with missing / known values for this metric.,
+flood_nri_county_year.csv,material_loss_original_usd,,Original nominal flood loss; annual sums combine original dollars from event months.,nominal USD (mixed prices for annual sums)
+flood_nri_county_year.csv,material_loss_adjusted_usd,,Sum of individually CPI-adjusted event amounts; blanks are not assumed zero.,USD at target-month prices
+flood_nri_county_year.csv,material_loss_per_nri_population_usd,,Exploratory ratio using a static NRI denominator; not contemporaneous exposure or causal effect. Blank for missing/zero denominator or incomplete numerator.,USD/person
+flood_nri_county_year.csv,direct_deaths_per_100k_nri_population,,Exploratory ratio using a static NRI denominator; not contemporaneous exposure or causal effect. Blank for missing/zero denominator or incomplete numerator.,deaths/100000 people
+flood_nri_county_year.csv,property_loss_to_nri_buildvalue_ratio,,Exploratory ratio using a static NRI denominator; not contemporaneous exposure or causal effect. Blank for missing/zero denominator or incomplete numerator.,ratio
+flood_nri_county_year.csv,crops_loss_to_nri_agrivalue_ratio,,Exploratory ratio using a static NRI denominator; not contemporaneous exposure or causal effect. Blank for missing/zero denominator or incomplete numerator.,ratio
+flood_nri_county_year.csv,property_loss_to_nri_building_eal_ratio,,Exploratory ratio using a static NRI denominator; not contemporaneous exposure or causal effect. Blank for missing/zero denominator or incomplete numerator. NOAA property damage is broader than NRI building damage; comparison is a proxy.,ratio
+flood_nri_county_year.csv,crops_loss_to_nri_agriculture_eal_ratio,,Exploratory ratio using a static NRI denominator; not contemporaneous exposure or causal effect. Blank for missing/zero denominator or incomplete numerator.,ratio
+flood_nri_county_year.csv,material_loss_to_nri_material_eal_ratio,,Exploratory ratio using a static NRI denominator; not contemporaneous exposure or causal effect. Blank for missing/zero denominator or incomplete numerator.,ratio
+flood_nri_county_year.csv,largest_event_material_loss_share,,Largest single record material loss / annual material loss; blank for incomplete or zero total.,
+flood_nri_county_year.csv,nri_id,NRI_ID,"National Risk Index ID; county snapshot, never sum across event rows or years.",
+flood_nri_county_year.csv,nri_state,STATE,"State Name; county snapshot, never sum across event rows or years.",
+flood_nri_county_year.csv,nri_stateabbrv,STATEABBRV,"State Name Abbreviation; county snapshot, never sum across event rows or years.",
+flood_nri_county_year.csv,nri_county,COUNTY,"County Name; county snapshot, never sum across event rows or years.",
+flood_nri_county_year.csv,nri_countytype,COUNTYTYPE,"County Type; county snapshot, never sum across event rows or years.",
+flood_nri_county_year.csv,nri_population,POPULATION,"Population (2020); county snapshot, never sum across event rows or years.",people (2020 snapshot per source dictionary)
+flood_nri_county_year.csv,nri_buildvalue,BUILDVALUE,"Building Value ($); county snapshot, never sum across event rows or years.",USD at NRI source-month prices
+flood_nri_county_year.csv,nri_agrivalue,AGRIVALUE,"Agriculture Value ($); county snapshot, never sum across event rows or years.",USD at NRI source-month prices
+flood_nri_county_year.csv,nri_area,AREA,"Area (sq mi); county snapshot, never sum across event rows or years.",
+flood_nri_county_year.csv,nri_sovi_score,SOVI_SCORE,"Social Vulnerability - Score; county snapshot, never sum across event rows or years.",
+flood_nri_county_year.csv,nri_sovi_ratng,SOVI_RATNG,"Social Vulnerability - Rating; county snapshot, never sum across event rows or years.",
+flood_nri_county_year.csv,nri_resl_score,RESL_SCORE,"Community Resilience - Score; county snapshot, never sum across event rows or years.",
+flood_nri_county_year.csv,nri_resl_ratng,RESL_RATNG,"Community Resilience - Rating; county snapshot, never sum across event rows or years.",
+flood_nri_county_year.csv,nri_resl_value,RESL_VALUE,"Community Resilience - Value; county snapshot, never sum across event rows or years.",
+flood_nri_county_year.csv,nri_crf_value,CRF_VALUE,"Community Risk Factor - Value; county snapshot, never sum across event rows or years.",
+flood_nri_county_year.csv,nri_nri_ver,NRI_VER,"National Risk Index Version; county snapshot, never sum across event rows or years.",
+flood_nri_county_year.csv,nri_agrivalue_adjusted_usd,AGRIVALUE,"Agriculture Value ($); county snapshot, never sum across event rows or years. Converted using CPI(target)/CPI(NRI price month).",USD at target-month prices
+flood_nri_county_year.csv,nri_buildvalue_adjusted_usd,BUILDVALUE,"Building Value ($); county snapshot, never sum across event rows or years. Converted using CPI(target)/CPI(NRI price month).",USD at target-month prices
+flood_nri_county_year.csv,nri_evnts,IFLD_EVNTS / CFLD_EVNTS,"Inland Flooding - Number of Events; county snapshot, never sum across event rows or years.",
+flood_nri_county_year.csv,nri_afreq,IFLD_AFREQ / CFLD_AFREQ,"Inland Flooding - Annualized Frequency; county snapshot, never sum across event rows or years.",
+flood_nri_county_year.csv,nri_exp_area,IFLD_EXP_AREA / CFLD_EXP_AREA,"Inland Flooding - Exposure - Impacted Area (sq mi); county snapshot, never sum across event rows or years.",
+flood_nri_county_year.csv,nri_expb,IFLD_EXPB / CFLD_EXPB,"Inland Flooding - Exposure - Building Value; county snapshot, never sum across event rows or years.",USD at NRI source-month prices
+flood_nri_county_year.csv,nri_expb_adjusted_usd,IFLD_EXPB / CFLD_EXPB,"Inland Flooding - Exposure - Building Value; county snapshot, never sum across event rows or years. Converted using CPI(target)/CPI(NRI price month).",USD at target-month prices
+flood_nri_county_year.csv,nri_expp,IFLD_EXPP / CFLD_EXPP,"Inland Flooding - Exposure - Population; county snapshot, never sum across event rows or years.","population / population-loss equivalent, not USD"
+flood_nri_county_year.csv,nri_exppe,IFLD_EXPPE / CFLD_EXPPE,"Inland Flooding - Exposure - Population Equivalence; county snapshot, never sum across event rows or years.",USD at NRI source-month prices
+flood_nri_county_year.csv,nri_exppe_adjusted_usd,IFLD_EXPPE / CFLD_EXPPE,"Inland Flooding - Exposure - Population Equivalence; county snapshot, never sum across event rows or years. Converted using CPI(target)/CPI(NRI price month).",USD at target-month prices
+flood_nri_county_year.csv,nri_expa,IFLD_EXPA,"Inland Flooding - Exposure - Agriculture Value; county snapshot, never sum across event rows or years.",USD at NRI source-month prices
+flood_nri_county_year.csv,nri_expa_adjusted_usd,IFLD_EXPA,"Inland Flooding - Exposure - Agriculture Value; county snapshot, never sum across event rows or years. Converted using CPI(target)/CPI(NRI price month).",USD at target-month prices
+flood_nri_county_year.csv,nri_expt,IFLD_EXPT / CFLD_EXPT,"Inland Flooding - Exposure - Total; county snapshot, never sum across event rows or years.",USD at NRI source-month prices
+flood_nri_county_year.csv,nri_expt_adjusted_usd,IFLD_EXPT / CFLD_EXPT,"Inland Flooding - Exposure - Total; county snapshot, never sum across event rows or years. Converted using CPI(target)/CPI(NRI price month).",USD at target-month prices
+flood_nri_county_year.csv,nri_hlrb,IFLD_HLRB / CFLD_HLRB,"Inland Flooding - Historic Loss Ratio - Buildings; county snapshot, never sum across event rows or years.",
+flood_nri_county_year.csv,nri_hlrp,IFLD_HLRP / CFLD_HLRP,"Inland Flooding - Historic Loss Ratio - Population; county snapshot, never sum across event rows or years.",
+flood_nri_county_year.csv,nri_hlra,IFLD_HLRA,"Inland Flooding - Historic Loss Ratio - Agriculture; county snapshot, never sum across event rows or years.",
+flood_nri_county_year.csv,nri_hlrr,IFLD_HLRR / CFLD_HLRR,"Inland Flooding - Historic Loss Ratio - Total Rating; county snapshot, never sum across event rows or years.",
+flood_nri_county_year.csv,nri_ealb,IFLD_EALB / CFLD_EALB,"Inland Flooding - Expected Annual Loss - Building Value; county snapshot, never sum across event rows or years.",USD at NRI source-month prices
+flood_nri_county_year.csv,nri_ealb_adjusted_usd,IFLD_EALB / CFLD_EALB,"Inland Flooding - Expected Annual Loss - Building Value; county snapshot, never sum across event rows or years. Converted using CPI(target)/CPI(NRI price month).",USD at target-month prices
+flood_nri_county_year.csv,nri_ealp,IFLD_EALP / CFLD_EALP,"Inland Flooding - Expected Annual Loss - Population; county snapshot, never sum across event rows or years.","population / population-loss equivalent, not USD"
+flood_nri_county_year.csv,nri_ealpe,IFLD_EALPE / CFLD_EALPE,"Inland Flooding - Expected Annual Loss - Population Equivalence; county snapshot, never sum across event rows or years.",USD at NRI source-month prices
+flood_nri_county_year.csv,nri_ealpe_adjusted_usd,IFLD_EALPE / CFLD_EALPE,"Inland Flooding - Expected Annual Loss - Population Equivalence; county snapshot, never sum across event rows or years. Converted using CPI(target)/CPI(NRI price month).",USD at target-month prices
+flood_nri_county_year.csv,nri_eala,IFLD_EALA,"Inland Flooding - Expected Annual Loss - Agriculture Value; county snapshot, never sum across event rows or years.",USD at NRI source-month prices
+flood_nri_county_year.csv,nri_eala_adjusted_usd,IFLD_EALA,"Inland Flooding - Expected Annual Loss - Agriculture Value; county snapshot, never sum across event rows or years. Converted using CPI(target)/CPI(NRI price month).",USD at target-month prices
+flood_nri_county_year.csv,nri_ealt,IFLD_EALT / CFLD_EALT,"Inland Flooding - Expected Annual Loss - Total; county snapshot, never sum across event rows or years.",USD at NRI source-month prices
+flood_nri_county_year.csv,nri_ealt_adjusted_usd,IFLD_EALT / CFLD_EALT,"Inland Flooding - Expected Annual Loss - Total; county snapshot, never sum across event rows or years. Converted using CPI(target)/CPI(NRI price month).",USD at target-month prices
+flood_nri_county_year.csv,nri_eals,IFLD_EALS / CFLD_EALS,"Inland Flooding - Expected Annual Loss Score; county snapshot, never sum across event rows or years.",
+flood_nri_county_year.csv,nri_ealr,IFLD_EALR / CFLD_EALR,"Inland Flooding - Expected Annual Loss Rating; county snapshot, never sum across event rows or years.",
+flood_nri_county_year.csv,nri_alrb,IFLD_ALRB / CFLD_ALRB,"Inland Flooding - Expected Annual Loss Rate - Building; county snapshot, never sum across event rows or years.",
+flood_nri_county_year.csv,nri_alrp,IFLD_ALRP / CFLD_ALRP,"Inland Flooding - Expected Annual Loss Rate - Population; county snapshot, never sum across event rows or years.",
+flood_nri_county_year.csv,nri_alra,IFLD_ALRA,"Inland Flooding - Expected Annual Loss Rate - Agriculture; county snapshot, never sum across event rows or years.",
+flood_nri_county_year.csv,nri_alr_npctl,IFLD_ALR_NPCTL / CFLD_ALR_NPCTL,"Expected Annual Loss Rate - National Percentile - Composite; county snapshot, never sum across event rows or years.",
+flood_nri_county_year.csv,nri_risks,IFLD_RISKS / CFLD_RISKS,"Inland Flooding - Hazard Type Risk Index Score; county snapshot, never sum across event rows or years.",
+flood_nri_county_year.csv,nri_riskr,IFLD_RISKR / CFLD_RISKR,"Inland Flooding - Hazard Type Risk Index Rating; county snapshot, never sum across event rows or years.",
+flood_nri_county_year.csv,nri_material_eal_adjusted_usd,"IFLD_EALB + IFLD_EALA, CPI-adjusted; blank for CFLD","Adjusted EALB + EALA, excluding population equivalence. Blank when either component is missing/not modeled. Converted using CPI(target)/CPI(NRI price month).",USD at target-month prices
+flood_nri_county_year.csv,nri_price_source_month,parameter --nri-price-month; FEMA NRI price-basis metadata,"Price basis for NRI dollar fields, independent of release date; default 2024-12 for v1.20.",
+flood_nri_county_year.csv,nri_cpi_factor,CPIAUCSL target-month CPI / NRI source-month CPI,CPI target month / CPI NRI price month; applied to USD fields only.,
+flood_nri_county_year.csv,nri_price_target_month,parameter --base-month,Target month for CPI-adjusted NRI dollar fields.,
+flood_nri_county_year.csv,nri_hazard_name,NRI_HazardInfo.csv: Hazard,HazardInfo hazard name selected by IFLD/CFLD prefix.,
+flood_nri_county_year.csv,nri_record_start,NRI_HazardInfo.csv: Start,"HazardInfo Start; for probability models this is a dataset year, not a historical window.",
+flood_nri_county_year.csv,nri_record_end,NRI_HazardInfo.csv: End,"HazardInfo End; for probability models this is a dataset year, not a historical window.",
+flood_nri_county_year.csv,nri_record_years,NRI_HazardInfo.csv: TotalYears,HazardInfo TotalYears; not the denominator for observed flood_final annual aggregation.,
+flood_nri_county_year.csv,nri_frequency_model,NRI_HazardInfo.csv: FrequencyModel,HazardInfo FrequencyModel: Annualized Frequency or Probability.,
+flood_nri_county_year.csv,nri_record_description,NRI_HazardInfo.csv: PeriodOfRecord,HazardInfo PeriodOfRecord description; retain the source qualification.,
