@@ -1,0 +1,286 @@
+{
+  "inputs": [
+    "E:\\Programs\\GitHub\\26datachallenge\\data\\processed_data\\flood_final.csv",
+    "E:\\Programs\\GitHub\\26datachallenge\\PublicAssistanceFundedProjectsDetails.csv",
+    "E:\\Programs\\GitHub\\26datachallenge\\HazardMitigationAssistanceProjects.csv",
+    "E:\\Programs\\GitHub\\26datachallenge\\NRI_Table_Counties.csv",
+    "E:\\Programs\\GitHub\\26datachallenge\\CPIAUCSL.csv"
+  ],
+  "outputs": [
+    "E:\\Programs\\GitHub\\26datachallenge\\data\\analyzed_data\\flood_policy_annual\\flood_policy_county_year_1999_2025.csv",
+    "E:\\Programs\\GitHub\\26datachallenge\\data\\analyzed_data\\flood_policy_annual\\flood_policy_county_year_1999_2025_dictionary.csv",
+    "E:\\Programs\\GitHub\\26datachallenge\\data\\analyzed_data\\flood_policy_annual\\flood_policy_county_year_1999_2025_metadata.json"
+  ],
+  "parameters": {
+    "start_year": 1999,
+    "end_year": 2025,
+    "cpi_base_year": 2025,
+    "maximum_source_year": 2026,
+    "time_resolution": "year"
+  },
+  "grain": "one row per observed flood county and fixed-EST event-start calendar year",
+  "rows": 36450,
+  "columns": 261,
+  "rows_by_year": {
+    "1999": 661,
+    "2000": 741,
+    "2001": 642,
+    "2002": 692,
+    "2003": 775,
+    "2004": 774,
+    "2005": 590,
+    "2006": 908,
+    "2007": 1554,
+    "2008": 1707,
+    "2009": 1819,
+    "2010": 1843,
+    "2011": 1776,
+    "2012": 1166,
+    "2013": 1810,
+    "2014": 1587,
+    "2015": 1791,
+    "2016": 1543,
+    "2017": 1581,
+    "2018": 1796,
+    "2019": 1847,
+    "2020": 1570,
+    "2021": 1516,
+    "2022": 1240,
+    "2023": 1469,
+    "2024": 1531,
+    "2025": 1521
+  },
+  "source_records": {
+    "flood": 145363,
+    "hma": 56410,
+    "pa": 849652
+  },
+  "coverage": {
+    "flood": {
+      "outside_output_years": 2734,
+      "forecast_zone": 7763,
+      "included_records": 131899,
+      "missing_or_invalid_county": 2967
+    },
+    "hma": {
+      "duplicate_business_identifiers": 2,
+      "invalid_year_records": 21,
+      "invalid_chronology_records": 1549,
+      "fiscal_cohort_county_year_coverage_links": 28640
+    },
+    "pa": {
+      "included_records": 504132,
+      "unallocated_location_records": 131757,
+      "no_flood_county_year_records": 209954,
+      "outside_or_invalid_declaration_year": 3809
+    },
+    "hma_locations": {
+      "single_county": 45961,
+      "unresolved_or_ambiguous_county_name": 639,
+      "statewide": 4915,
+      "multiple_counties": 1363,
+      "missing_location": 2826,
+      "primary_and_coverage_conflict": 505,
+      "primary_only": 201
+    },
+    "nri": {
+      "matched_county_years": 36116,
+      "unmatched_county_years": 334
+    }
+  },
+  "omitted_or_unallocated_nominal_controls": {
+    "forecast_zone": {
+      "known_records": 7763,
+      "missing_records": 0,
+      "amount": "26596811470.00"
+    },
+    "missing_or_invalid_county": {
+      "known_records": 2967,
+      "missing_records": 0,
+      "amount": "19419540600.00"
+    },
+    "pa_unallocated_location_federal_share": {
+      "known_records": 131757,
+      "missing_records": 0,
+      "amount": "150607857509.42"
+    },
+    "pa_no_flood_county_year_federal_share": {
+      "known_records": 209954,
+      "missing_records": 0,
+      "amount": "42891991339.89"
+    },
+    "hma_unallocated_location_federal_share": {
+      "known_records": 1191,
+      "missing_records": 40,
+      "amount": "1137692017.96"
+    },
+    "hma_multicounty_unallocated_federal_share": {
+      "known_records": 64,
+      "missing_records": 26,
+      "amount": "146631989.02"
+    }
+  },
+  "annual_cpi": {
+    "1999": {
+      "value": "166.5833333333333333333333333",
+      "sum_of_12_observations": "1999.000",
+      "interpolated_observations": 0
+    },
+    "2000": {
+      "value": "172.1916666666666666666666667",
+      "sum_of_12_observations": "2066.300",
+      "interpolated_observations": 0
+    },
+    "2001": {
+      "value": "177.0416666666666666666666667",
+      "sum_of_12_observations": "2124.500",
+      "interpolated_observations": 0
+    },
+    "2002": {
+      "value": "179.8666666666666666666666667",
+      "sum_of_12_observations": "2158.400",
+      "interpolated_observations": 0
+    },
+    "2003": {
+      "value": "184.000",
+      "sum_of_12_observations": "2208.000",
+      "interpolated_observations": 0
+    },
+    "2004": {
+      "value": "188.9083333333333333333333333",
+      "sum_of_12_observations": "2266.900",
+      "interpolated_observations": 0
+    },
+    "2005": {
+      "value": "195.2666666666666666666666667",
+      "sum_of_12_observations": "2343.200",
+      "interpolated_observations": 0
+    },
+    "2006": {
+      "value": "201.5583333333333333333333333",
+      "sum_of_12_observations": "2418.700",
+      "interpolated_observations": 0
+    },
+    "2007": {
+      "value": "207.3441666666666666666666667",
+      "sum_of_12_observations": "2488.130",
+      "interpolated_observations": 0
+    },
+    "2008": {
+      "value": "215.25425",
+      "sum_of_12_observations": "2583.051",
+      "interpolated_observations": 0
+    },
+    "2009": {
+      "value": "214.5646666666666666666666667",
+      "sum_of_12_observations": "2574.776",
+      "interpolated_observations": 0
+    },
+    "2010": {
+      "value": "218.0761666666666666666666667",
+      "sum_of_12_observations": "2616.914",
+      "interpolated_observations": 0
+    },
+    "2011": {
+      "value": "224.923",
+      "sum_of_12_observations": "2699.076",
+      "interpolated_observations": 0
+    },
+    "2012": {
+      "value": "229.5860833333333333333333333",
+      "sum_of_12_observations": "2755.033",
+      "interpolated_observations": 0
+    },
+    "2013": {
+      "value": "232.95175",
+      "sum_of_12_observations": "2795.421",
+      "interpolated_observations": 0
+    },
+    "2014": {
+      "value": "236.715",
+      "sum_of_12_observations": "2840.580",
+      "interpolated_observations": 0
+    },
+    "2015": {
+      "value": "237.00175",
+      "sum_of_12_observations": "2844.021",
+      "interpolated_observations": 0
+    },
+    "2016": {
+      "value": "240.0054166666666666666666667",
+      "sum_of_12_observations": "2880.065",
+      "interpolated_observations": 0
+    },
+    "2017": {
+      "value": "245.121",
+      "sum_of_12_observations": "2941.452",
+      "interpolated_observations": 0
+    },
+    "2018": {
+      "value": "251.0995",
+      "sum_of_12_observations": "3013.194",
+      "interpolated_observations": 0
+    },
+    "2019": {
+      "value": "255.6525833333333333333333333",
+      "sum_of_12_observations": "3067.831",
+      "interpolated_observations": 0
+    },
+    "2020": {
+      "value": "258.85575",
+      "sum_of_12_observations": "3106.269",
+      "interpolated_observations": 0
+    },
+    "2021": {
+      "value": "270.9734166666666666666666667",
+      "sum_of_12_observations": "3251.681",
+      "interpolated_observations": 0
+    },
+    "2022": {
+      "value": "292.6264166666666666666666667",
+      "sum_of_12_observations": "3511.517",
+      "interpolated_observations": 0
+    },
+    "2023": {
+      "value": "304.703",
+      "sum_of_12_observations": "3656.436",
+      "interpolated_observations": 0
+    },
+    "2024": {
+      "value": "313.6981666666666666666666667",
+      "sum_of_12_observations": "3764.378",
+      "interpolated_observations": 0
+    },
+    "2025": {
+      "value": "322.18625",
+      "sum_of_12_observations": "3866.235",
+      "interpolated_observations": 1
+    }
+  },
+  "hma_duplicate_business_identifiers": {
+    "DR-1871-0019": 2,
+    "DR-1763-0068-P": 2
+  },
+  "methods_and_limits": [
+    "Local inputs only; no additional dataset, API or disaster-declaration interval is used.",
+    "A county/year match provides context, not a causal/event-to-project attribution. NOAA episode IDs are not FEMA disaster numbers.",
+    "The flood base is damage-screened. Absent county-years are not synthesized as zero-flood observations; noncounty records are counted in omissions.",
+    "Source cleaning filled one missing damage component with zero. That imputation cannot be reversed here; casualty missingness is retained.",
+    "PA geography is applicant location. Statewide/missing locations are unallocated even if a county code is populated.",
+    "PA amounts are cumulative snapshot values of declaration-year cohorts, not annual disbursements. Exact Flood incidents and flood-capable incidents are separate; neither assigns all spending to NOAA flood events.",
+    "HMA fiscal-year cohorts, first/latest approval, initial obligation and closure-year records have different meanings and are not additive.",
+    "All statuses remain in HMA cohort counts. Awarded/closed and flood-related filters govern money and milestone summaries.",
+    "Flood-related HMA means an explicitly mapped physical flood activity or FMA/SRL/RFC membership. Other potentially relevant measures are not assumed to be flood-specific.",
+    "HMA id is the record key. Repeated projectIdentifier values are retained and flagged, not arbitrarily collapsed.",
+    "HMA county names are resolved only when a state/name alias uniquely maps to a county code. Conflicts and statewide projects remain unallocated.",
+    "Multicounty HMA coverage can appear in multiple counties, but project money is included only for single-county scope. Coverage and activity counts are not nationally additive.",
+    "Current cohort/first-approval activity counts and prior-closure activity stocks are separate, so newly approved strategies are not confused with earlier mitigation context.",
+    "Prior-year closure stocks include pre-1999 projects. Closure in the same calendar year is not assumed to precede that year's floods. Closure is a fiscal milestone, not verified protection at every flood point.",
+    "Impossible years and reversed YEAR ordering are flagged and excluded from milestone/prior-closure features; ties within a year are not ordered.",
+    "Positive BCR median is reported descriptively; it is not realized effectiveness and no model is trained.",
+    "Flood CPI uses annual means after the existing adjacent-observation missing-value rule. Project monetary snapshots retain nominal values because precise spending price years cannot be reconstructed.",
+    "NRI is the full authoritative static snapshot, including blanks, with separate IFLD/CFLD columns; it is not a historical social panel and is never summed over years.",
+    "No matched project records does not establish no government action. Observation flags and blank money values preserve this distinction.",
+    "Current PA/HMA/NRI snapshots are not decision-time observations; their fields must not be treated as leakage-free historical predictors."
+  ]
+}

@@ -1,0 +1,262 @@
+﻿field,source,definition,units,role
+county_fips,derived/local CSVs,Five-character source county FIPS; historical codes retained.,,key
+analysis_year,derived/local CSVs,"Calendar year, one row per county with retained flood observations.",,key
+county_name,derived/local CSVs,NRI county name if matched; otherwise observed NOAA area name.,,context
+nri_match_status,derived/local CSVs,matched or unmatched_county_fips; unmatched counties are retained.,,context
+cpi_base_year,derived/local CSVs,Annual CPI price target year; applies only to adjusted flood loss fields.,,context
+cpi_source_interpolated_observations,derived/local CSVs,Missing monthly CPI observations filled before calculating source annual mean.,,context
+cpi_base_interpolated_observations,derived/local CSVs,Missing CPI observations filled before calculating target annual mean.,,context
+flood_records,flood_final.csv,"Recorded, damage-screened flood rows in this county/year; not all flood occurrence.",records,observed_impact
+flood_distinct_episodes,flood_final.csv,Distinct nonblank NOAA episode IDs within this county/year.,records,observed_impact
+flood_missing_episode_records,flood_final.csv,Records with no episode ID.,records,observed_impact
+flood_location_records,flood_final.csv,Records carrying reported location points; not inundation polygons.,records,observed_impact
+flood_partial_source_year_records,flood_final.csv,Records flagged partial by the source cleaning.,records,observed_impact
+flood_flash_flood_records,flood_final.csv:event_type,Recorded event count for this flood subtype.,records,observed_impact
+flood_flash_flood_material_loss_nominal_usd,flood_final.csv,Property plus crop loss for this subtype. Blank if no known contributing value; signed adjustments retained.,nominal USD,observed_impact
+flood_flash_flood_material_loss_nominal_usd_known_records,flood_final.csv,Contributing records with a known value.,records,observed_impact
+flood_flash_flood_material_loss_nominal_usd_missing_records,flood_final.csv,Contributing records whose value is blank.,records,observed_impact
+flood_inland_flood_records,flood_final.csv:event_type,Recorded event count for this flood subtype.,records,observed_impact
+flood_inland_flood_material_loss_nominal_usd,flood_final.csv,Property plus crop loss for this subtype. Blank if no known contributing value; signed adjustments retained.,nominal USD,observed_impact
+flood_inland_flood_material_loss_nominal_usd_known_records,flood_final.csv,Contributing records with a known value.,records,observed_impact
+flood_inland_flood_material_loss_nominal_usd_missing_records,flood_final.csv,Contributing records whose value is blank.,records,observed_impact
+flood_coastal_flood_records,flood_final.csv:event_type,Recorded event count for this flood subtype.,records,observed_impact
+flood_coastal_flood_material_loss_nominal_usd,flood_final.csv,Property plus crop loss for this subtype. Blank if no known contributing value; signed adjustments retained.,nominal USD,observed_impact
+flood_coastal_flood_material_loss_nominal_usd_known_records,flood_final.csv,Contributing records with a known value.,records,observed_impact
+flood_coastal_flood_material_loss_nominal_usd_missing_records,flood_final.csv,Contributing records whose value is blank.,records,observed_impact
+flood_lakeshore_flood_records,flood_final.csv:event_type,Recorded event count for this flood subtype.,records,observed_impact
+flood_lakeshore_flood_material_loss_nominal_usd,flood_final.csv,Property plus crop loss for this subtype. Blank if no known contributing value; signed adjustments retained.,nominal USD,observed_impact
+flood_lakeshore_flood_material_loss_nominal_usd_known_records,flood_final.csv,Contributing records with a known value.,records,observed_impact
+flood_lakeshore_flood_material_loss_nominal_usd_missing_records,flood_final.csv,Contributing records whose value is blank.,records,observed_impact
+flood_property_loss_nominal_usd,flood_final.csv,Known-value sum of property damage. Blank if no known contributing value; signed adjustments retained.,nominal USD,observed_impact
+flood_property_loss_nominal_usd_known_records,flood_final.csv,Contributing records with a known value.,records,observed_impact
+flood_property_loss_nominal_usd_missing_records,flood_final.csv,Contributing records whose value is blank.,records,observed_impact
+flood_property_loss_adjusted_usd,flood_final.csv+CPIAUCSL.csv,property damage adjusted with annual CPI; each event rounded to cents. Blank if no known contributing value; signed adjustments retained.,2025 annual-CPI USD,observed_impact
+flood_property_loss_adjusted_usd_known_records,flood_final.csv+CPIAUCSL.csv,Contributing records with a known value.,records,observed_impact
+flood_property_loss_adjusted_usd_missing_records,flood_final.csv+CPIAUCSL.csv,Contributing records whose value is blank.,records,observed_impact
+flood_crops_loss_nominal_usd,flood_final.csv,Known-value sum of crops damage. Blank if no known contributing value; signed adjustments retained.,nominal USD,observed_impact
+flood_crops_loss_nominal_usd_known_records,flood_final.csv,Contributing records with a known value.,records,observed_impact
+flood_crops_loss_nominal_usd_missing_records,flood_final.csv,Contributing records whose value is blank.,records,observed_impact
+flood_crops_loss_adjusted_usd,flood_final.csv+CPIAUCSL.csv,crops damage adjusted with annual CPI; each event rounded to cents. Blank if no known contributing value; signed adjustments retained.,2025 annual-CPI USD,observed_impact
+flood_crops_loss_adjusted_usd_known_records,flood_final.csv+CPIAUCSL.csv,Contributing records with a known value.,records,observed_impact
+flood_crops_loss_adjusted_usd_missing_records,flood_final.csv+CPIAUCSL.csv,Contributing records whose value is blank.,records,observed_impact
+flood_material_loss_nominal_usd,flood_final.csv,Known-value sum of material damage. Blank if no known contributing value; signed adjustments retained.,nominal USD,observed_impact
+flood_material_loss_nominal_usd_known_records,flood_final.csv,Contributing records with a known value.,records,observed_impact
+flood_material_loss_nominal_usd_missing_records,flood_final.csv,Contributing records whose value is blank.,records,observed_impact
+flood_material_loss_adjusted_usd,flood_final.csv+CPIAUCSL.csv,material damage adjusted with annual CPI; each event rounded to cents. Blank if no known contributing value; signed adjustments retained.,2025 annual-CPI USD,observed_impact
+flood_material_loss_adjusted_usd_known_records,flood_final.csv+CPIAUCSL.csv,Contributing records with a known value.,records,observed_impact
+flood_material_loss_adjusted_usd_missing_records,flood_final.csv+CPIAUCSL.csv,Contributing records whose value is blank.,records,observed_impact
+flood_injuries_direct,flood_final.csv,Known-value sum of reported casualties; inspect missing count. Blank if no known contributing value; signed adjustments retained.,people,observed_impact
+flood_injuries_direct_known_records,flood_final.csv,Contributing records with a known value.,records,observed_impact
+flood_injuries_direct_missing_records,flood_final.csv,Contributing records whose value is blank.,records,observed_impact
+flood_injuries_indirect,flood_final.csv,Known-value sum of reported casualties; inspect missing count. Blank if no known contributing value; signed adjustments retained.,people,observed_impact
+flood_injuries_indirect_known_records,flood_final.csv,Contributing records with a known value.,records,observed_impact
+flood_injuries_indirect_missing_records,flood_final.csv,Contributing records whose value is blank.,records,observed_impact
+flood_deaths_direct,flood_final.csv,Known-value sum of reported casualties; inspect missing count. Blank if no known contributing value; signed adjustments retained.,people,observed_impact
+flood_deaths_direct_known_records,flood_final.csv,Contributing records with a known value.,records,observed_impact
+flood_deaths_direct_missing_records,flood_final.csv,Contributing records whose value is blank.,records,observed_impact
+flood_deaths_indirect,flood_final.csv,Known-value sum of reported casualties; inspect missing count. Blank if no known contributing value; signed adjustments retained.,people,observed_impact
+flood_deaths_indirect_known_records,flood_final.csv,Contributing records with a known value.,records,observed_impact
+flood_deaths_indirect_missing_records,flood_final.csv,Contributing records whose value is blank.,records,observed_impact
+flood_mean_duration_hours,flood_final.csv,Mean of known event durations.,hours,observed_impact
+flood_max_duration_hours,flood_final.csv,Maximum of known event durations.,hours,observed_impact
+flood_duration_missing_records,flood_final.csv,Missing event duration.,records,observed_impact
+flood_cause_counts,flood_final.csv,"JSON counts of nonblank flood_cause, with missing cause separately counted.",,observed_impact
+flood_cause_missing_records,flood_final.csv,Blank reported flood cause.,records,observed_impact
+nri_nri_id,NRI_Table_Counties.csv:NRI_ID,Unmodified NRI static snapshot field; not a historical annual observation.,,static_snapshot
+nri_state,NRI_Table_Counties.csv:STATE,Unmodified NRI static snapshot field; not a historical annual observation.,,static_snapshot
+nri_stateabbrv,NRI_Table_Counties.csv:STATEABBRV,Unmodified NRI static snapshot field; not a historical annual observation.,,static_snapshot
+nri_county,NRI_Table_Counties.csv:COUNTY,Unmodified NRI static snapshot field; not a historical annual observation.,,static_snapshot
+nri_countytype,NRI_Table_Counties.csv:COUNTYTYPE,Unmodified NRI static snapshot field; not a historical annual observation.,,static_snapshot
+nri_nri_ver,NRI_Table_Counties.csv:NRI_VER,Unmodified NRI static snapshot field; not a historical annual observation.,,static_snapshot
+nri_population,NRI_Table_Counties.csv:POPULATION,Unmodified NRI static snapshot field; not a historical annual observation.,,static_snapshot
+nri_buildvalue,NRI_Table_Counties.csv:BUILDVALUE,Unmodified NRI static snapshot field; not a historical annual observation.,,static_snapshot
+nri_agrivalue,NRI_Table_Counties.csv:AGRIVALUE,Unmodified NRI static snapshot field; not a historical annual observation.,,static_snapshot
+nri_area,NRI_Table_Counties.csv:AREA,Unmodified NRI static snapshot field; not a historical annual observation.,,static_snapshot
+nri_sovi_score,NRI_Table_Counties.csv:SOVI_SCORE,Unmodified NRI static snapshot field; not a historical annual observation.,,static_snapshot
+nri_sovi_ratng,NRI_Table_Counties.csv:SOVI_RATNG,Unmodified NRI static snapshot field; not a historical annual observation.,,static_snapshot
+nri_resl_score,NRI_Table_Counties.csv:RESL_SCORE,Unmodified NRI static snapshot field; not a historical annual observation.,,static_snapshot
+nri_resl_ratng,NRI_Table_Counties.csv:RESL_RATNG,Unmodified NRI static snapshot field; not a historical annual observation.,,static_snapshot
+nri_resl_value,NRI_Table_Counties.csv:RESL_VALUE,Unmodified NRI static snapshot field; not a historical annual observation.,,static_snapshot
+nri_crf_value,NRI_Table_Counties.csv:CRF_VALUE,Unmodified NRI static snapshot field; not a historical annual observation.,,static_snapshot
+nri_ifld_evnts,NRI_Table_Counties.csv:IFLD_EVNTS,Unmodified hazard-specific static NRI field; blanks are not zeros and money retains NRI source price basis.,,static_snapshot
+nri_ifld_afreq,NRI_Table_Counties.csv:IFLD_AFREQ,Unmodified hazard-specific static NRI field; blanks are not zeros and money retains NRI source price basis.,,static_snapshot
+nri_ifld_expb,NRI_Table_Counties.csv:IFLD_EXPB,Unmodified hazard-specific static NRI field; blanks are not zeros and money retains NRI source price basis.,,static_snapshot
+nri_ifld_expp,NRI_Table_Counties.csv:IFLD_EXPP,Unmodified hazard-specific static NRI field; blanks are not zeros and money retains NRI source price basis.,,static_snapshot
+nri_ifld_expa,NRI_Table_Counties.csv:IFLD_EXPA,Unmodified hazard-specific static NRI field; blanks are not zeros and money retains NRI source price basis.,,static_snapshot
+nri_ifld_hlrb,NRI_Table_Counties.csv:IFLD_HLRB,Unmodified hazard-specific static NRI field; blanks are not zeros and money retains NRI source price basis.,,static_snapshot
+nri_ifld_hlrp,NRI_Table_Counties.csv:IFLD_HLRP,Unmodified hazard-specific static NRI field; blanks are not zeros and money retains NRI source price basis.,,static_snapshot
+nri_ifld_hlra,NRI_Table_Counties.csv:IFLD_HLRA,Unmodified hazard-specific static NRI field; blanks are not zeros and money retains NRI source price basis.,,static_snapshot
+nri_ifld_ealb,NRI_Table_Counties.csv:IFLD_EALB,Unmodified hazard-specific static NRI field; blanks are not zeros and money retains NRI source price basis.,,static_snapshot
+nri_ifld_ealp,NRI_Table_Counties.csv:IFLD_EALP,Unmodified hazard-specific static NRI field; blanks are not zeros and money retains NRI source price basis.,,static_snapshot
+nri_ifld_ealpe,NRI_Table_Counties.csv:IFLD_EALPE,Unmodified hazard-specific static NRI field; blanks are not zeros and money retains NRI source price basis.,,static_snapshot
+nri_ifld_eala,NRI_Table_Counties.csv:IFLD_EALA,Unmodified hazard-specific static NRI field; blanks are not zeros and money retains NRI source price basis.,,static_snapshot
+nri_ifld_ealt,NRI_Table_Counties.csv:IFLD_EALT,Unmodified hazard-specific static NRI field; blanks are not zeros and money retains NRI source price basis.,,static_snapshot
+nri_ifld_eals,NRI_Table_Counties.csv:IFLD_EALS,Unmodified hazard-specific static NRI field; blanks are not zeros and money retains NRI source price basis.,,static_snapshot
+nri_ifld_ealr,NRI_Table_Counties.csv:IFLD_EALR,Unmodified hazard-specific static NRI field; blanks are not zeros and money retains NRI source price basis.,,static_snapshot
+nri_ifld_risks,NRI_Table_Counties.csv:IFLD_RISKS,Unmodified hazard-specific static NRI field; blanks are not zeros and money retains NRI source price basis.,,static_snapshot
+nri_ifld_riskr,NRI_Table_Counties.csv:IFLD_RISKR,Unmodified hazard-specific static NRI field; blanks are not zeros and money retains NRI source price basis.,,static_snapshot
+nri_ifld_alrb,NRI_Table_Counties.csv:IFLD_ALRB,Unmodified hazard-specific static NRI field; blanks are not zeros and money retains NRI source price basis.,,static_snapshot
+nri_ifld_alra,NRI_Table_Counties.csv:IFLD_ALRA,Unmodified hazard-specific static NRI field; blanks are not zeros and money retains NRI source price basis.,,static_snapshot
+nri_ifld_alr_npctl,NRI_Table_Counties.csv:IFLD_ALR_NPCTL,Unmodified hazard-specific static NRI field; blanks are not zeros and money retains NRI source price basis.,,static_snapshot
+nri_cfld_evnts,NRI_Table_Counties.csv:CFLD_EVNTS,Unmodified hazard-specific static NRI field; blanks are not zeros and money retains NRI source price basis.,,static_snapshot
+nri_cfld_afreq,NRI_Table_Counties.csv:CFLD_AFREQ,Unmodified hazard-specific static NRI field; blanks are not zeros and money retains NRI source price basis.,,static_snapshot
+nri_cfld_expb,NRI_Table_Counties.csv:CFLD_EXPB,Unmodified hazard-specific static NRI field; blanks are not zeros and money retains NRI source price basis.,,static_snapshot
+nri_cfld_expp,NRI_Table_Counties.csv:CFLD_EXPP,Unmodified hazard-specific static NRI field; blanks are not zeros and money retains NRI source price basis.,,static_snapshot
+nri_cfld_expa,NRI_Table_Counties.csv:CFLD_EXPA,Unmodified hazard-specific static NRI field; blanks are not zeros and money retains NRI source price basis.,,static_snapshot
+nri_cfld_hlrb,NRI_Table_Counties.csv:CFLD_HLRB,Unmodified hazard-specific static NRI field; blanks are not zeros and money retains NRI source price basis.,,static_snapshot
+nri_cfld_hlrp,NRI_Table_Counties.csv:CFLD_HLRP,Unmodified hazard-specific static NRI field; blanks are not zeros and money retains NRI source price basis.,,static_snapshot
+nri_cfld_hlra,NRI_Table_Counties.csv:CFLD_HLRA,Unmodified hazard-specific static NRI field; blanks are not zeros and money retains NRI source price basis.,,static_snapshot
+nri_cfld_ealb,NRI_Table_Counties.csv:CFLD_EALB,Unmodified hazard-specific static NRI field; blanks are not zeros and money retains NRI source price basis.,,static_snapshot
+nri_cfld_ealp,NRI_Table_Counties.csv:CFLD_EALP,Unmodified hazard-specific static NRI field; blanks are not zeros and money retains NRI source price basis.,,static_snapshot
+nri_cfld_ealpe,NRI_Table_Counties.csv:CFLD_EALPE,Unmodified hazard-specific static NRI field; blanks are not zeros and money retains NRI source price basis.,,static_snapshot
+nri_cfld_eala,NRI_Table_Counties.csv:CFLD_EALA,Unmodified hazard-specific static NRI field; blanks are not zeros and money retains NRI source price basis.,,static_snapshot
+nri_cfld_ealt,NRI_Table_Counties.csv:CFLD_EALT,Unmodified hazard-specific static NRI field; blanks are not zeros and money retains NRI source price basis.,,static_snapshot
+nri_cfld_eals,NRI_Table_Counties.csv:CFLD_EALS,Unmodified hazard-specific static NRI field; blanks are not zeros and money retains NRI source price basis.,,static_snapshot
+nri_cfld_ealr,NRI_Table_Counties.csv:CFLD_EALR,Unmodified hazard-specific static NRI field; blanks are not zeros and money retains NRI source price basis.,,static_snapshot
+nri_cfld_risks,NRI_Table_Counties.csv:CFLD_RISKS,Unmodified hazard-specific static NRI field; blanks are not zeros and money retains NRI source price basis.,,static_snapshot
+nri_cfld_riskr,NRI_Table_Counties.csv:CFLD_RISKR,Unmodified hazard-specific static NRI field; blanks are not zeros and money retains NRI source price basis.,,static_snapshot
+nri_cfld_alrb,NRI_Table_Counties.csv:CFLD_ALRB,Unmodified hazard-specific static NRI field; blanks are not zeros and money retains NRI source price basis.,,static_snapshot
+nri_cfld_alra,NRI_Table_Counties.csv:CFLD_ALRA,Unmodified hazard-specific static NRI field; blanks are not zeros and money retains NRI source price basis.,,static_snapshot
+nri_cfld_alr_npctl,NRI_Table_Counties.csv:CFLD_ALR_NPCTL,Unmodified hazard-specific static NRI field; blanks are not zeros and money retains NRI source price basis.,,static_snapshot
+pa_records,PublicAssistanceFundedProjectsDetails.csv,County of applicant; calendar declaration-year cohort. No attribution to a particular NOAA event.,records,snapshot_response
+pa_eligible_records,PublicAssistanceFundedProjectsDetails.csv,County of applicant; calendar declaration-year cohort. No attribution to a particular NOAA event.,records,snapshot_response
+pa_noneligible_records,PublicAssistanceFundedProjectsDetails.csv,County of applicant; calendar declaration-year cohort. No attribution to a particular NOAA event.,records,snapshot_response
+pa_distinct_disasters,PublicAssistanceFundedProjectsDetails.csv,County of applicant; calendar declaration-year cohort. No attribution to a particular NOAA event.,records,snapshot_response
+pa_flood_incident_eligible_records,PublicAssistanceFundedProjectsDetails.csv,County of applicant; calendar declaration-year cohort. No attribution to a particular NOAA event.,records,snapshot_response
+pa_possible_flood_incident_eligible_records,PublicAssistanceFundedProjectsDetails.csv,County of applicant; calendar declaration-year cohort. No attribution to a particular NOAA event.,records,snapshot_response
+pa_eligible_project_amount_nominal_usd,PA:projectAmount,"Eligible projects assigned to declaration year; cumulative value at source snapshot, not annual payments. Blank if no known contributing value; signed adjustments retained.",nominal USD,snapshot_response
+pa_eligible_project_amount_nominal_usd_known_records,PA:projectAmount,Contributing records with a known value.,records,snapshot_response
+pa_eligible_project_amount_nominal_usd_missing_records,PA:projectAmount,Contributing records whose value is blank.,records,snapshot_response
+pa_eligible_federal_share_obligated_nominal_usd,PA:federalShareObligated,"Eligible projects assigned to declaration year; cumulative value at source snapshot, not annual payments. Blank if no known contributing value; signed adjustments retained.",nominal USD,snapshot_response
+pa_eligible_federal_share_obligated_nominal_usd_known_records,PA:federalShareObligated,Contributing records with a known value.,records,snapshot_response
+pa_eligible_federal_share_obligated_nominal_usd_missing_records,PA:federalShareObligated,Contributing records whose value is blank.,records,snapshot_response
+pa_eligible_total_obligated_nominal_usd,PA:totalObligated,"Eligible projects assigned to declaration year; cumulative value at source snapshot, not annual payments. Blank if no known contributing value; signed adjustments retained.",nominal USD,snapshot_response
+pa_eligible_total_obligated_nominal_usd_known_records,PA:totalObligated,Contributing records with a known value.,records,snapshot_response
+pa_eligible_total_obligated_nominal_usd_missing_records,PA:totalObligated,Contributing records whose value is blank.,records,snapshot_response
+pa_eligible_mitigation_amount_nominal_usd,PA:mitigationAmount,"Eligible projects assigned to declaration year; cumulative value at source snapshot, not annual payments. Blank if no known contributing value; signed adjustments retained.",nominal USD,snapshot_response
+pa_eligible_mitigation_amount_nominal_usd_known_records,PA:mitigationAmount,Contributing records with a known value.,records,snapshot_response
+pa_eligible_mitigation_amount_nominal_usd_missing_records,PA:mitigationAmount,Contributing records whose value is blank.,records,snapshot_response
+pa_flood_incident_federal_share_obligated_nominal_usd,"PA:incidentType,federalShareObligated",Exact Flood incident type or separately designated flood-capable incident types; not flood-exclusive expenditure. Blank if no known contributing value; signed adjustments retained.,nominal USD,snapshot_response
+pa_flood_incident_federal_share_obligated_nominal_usd_known_records,"PA:incidentType,federalShareObligated",Contributing records with a known value.,records,snapshot_response
+pa_flood_incident_federal_share_obligated_nominal_usd_missing_records,"PA:incidentType,federalShareObligated",Contributing records whose value is blank.,records,snapshot_response
+pa_possible_flood_incident_federal_share_obligated_nominal_usd,"PA:incidentType,federalShareObligated",Exact Flood incident type or separately designated flood-capable incident types; not flood-exclusive expenditure. Blank if no known contributing value; signed adjustments retained.,nominal USD,snapshot_response
+pa_possible_flood_incident_federal_share_obligated_nominal_usd_known_records,"PA:incidentType,federalShareObligated",Contributing records with a known value.,records,snapshot_response
+pa_possible_flood_incident_federal_share_obligated_nominal_usd_missing_records,"PA:incidentType,federalShareObligated",Contributing records whose value is blank.,records,snapshot_response
+pa_eligible_debris_records,PA:damageCategoryCode,"Eligible projects by work category, assigned once to declaration year.",records,snapshot_response
+pa_eligible_debris_federal_share_nominal_usd,PA:federalShareObligated,Cumulative eligible federal share for this work category. Blank if no known contributing value; signed adjustments retained.,nominal USD,snapshot_response
+pa_eligible_debris_federal_share_nominal_usd_known_records,PA:federalShareObligated,Contributing records with a known value.,records,snapshot_response
+pa_eligible_debris_federal_share_nominal_usd_missing_records,PA:federalShareObligated,Contributing records whose value is blank.,records,snapshot_response
+pa_eligible_emergency_records,PA:damageCategoryCode,"Eligible projects by work category, assigned once to declaration year.",records,snapshot_response
+pa_eligible_emergency_federal_share_nominal_usd,PA:federalShareObligated,Cumulative eligible federal share for this work category. Blank if no known contributing value; signed adjustments retained.,nominal USD,snapshot_response
+pa_eligible_emergency_federal_share_nominal_usd_known_records,PA:federalShareObligated,Contributing records with a known value.,records,snapshot_response
+pa_eligible_emergency_federal_share_nominal_usd_missing_records,PA:federalShareObligated,Contributing records whose value is blank.,records,snapshot_response
+pa_eligible_roads_bridges_records,PA:damageCategoryCode,"Eligible projects by work category, assigned once to declaration year.",records,snapshot_response
+pa_eligible_roads_bridges_federal_share_nominal_usd,PA:federalShareObligated,Cumulative eligible federal share for this work category. Blank if no known contributing value; signed adjustments retained.,nominal USD,snapshot_response
+pa_eligible_roads_bridges_federal_share_nominal_usd_known_records,PA:federalShareObligated,Contributing records with a known value.,records,snapshot_response
+pa_eligible_roads_bridges_federal_share_nominal_usd_missing_records,PA:federalShareObligated,Contributing records whose value is blank.,records,snapshot_response
+pa_eligible_water_control_records,PA:damageCategoryCode,"Eligible projects by work category, assigned once to declaration year.",records,snapshot_response
+pa_eligible_water_control_federal_share_nominal_usd,PA:federalShareObligated,Cumulative eligible federal share for this work category. Blank if no known contributing value; signed adjustments retained.,nominal USD,snapshot_response
+pa_eligible_water_control_federal_share_nominal_usd_known_records,PA:federalShareObligated,Contributing records with a known value.,records,snapshot_response
+pa_eligible_water_control_federal_share_nominal_usd_missing_records,PA:federalShareObligated,Contributing records whose value is blank.,records,snapshot_response
+pa_eligible_buildings_records,PA:damageCategoryCode,"Eligible projects by work category, assigned once to declaration year.",records,snapshot_response
+pa_eligible_buildings_federal_share_nominal_usd,PA:federalShareObligated,Cumulative eligible federal share for this work category. Blank if no known contributing value; signed adjustments retained.,nominal USD,snapshot_response
+pa_eligible_buildings_federal_share_nominal_usd_known_records,PA:federalShareObligated,Contributing records with a known value.,records,snapshot_response
+pa_eligible_buildings_federal_share_nominal_usd_missing_records,PA:federalShareObligated,Contributing records whose value is blank.,records,snapshot_response
+pa_eligible_utilities_records,PA:damageCategoryCode,"Eligible projects by work category, assigned once to declaration year.",records,snapshot_response
+pa_eligible_utilities_federal_share_nominal_usd,PA:federalShareObligated,Cumulative eligible federal share for this work category. Blank if no known contributing value; signed adjustments retained.,nominal USD,snapshot_response
+pa_eligible_utilities_federal_share_nominal_usd_known_records,PA:federalShareObligated,Contributing records with a known value.,records,snapshot_response
+pa_eligible_utilities_federal_share_nominal_usd_missing_records,PA:federalShareObligated,Contributing records whose value is blank.,records,snapshot_response
+pa_eligible_parks_other_records,PA:damageCategoryCode,"Eligible projects by work category, assigned once to declaration year.",records,snapshot_response
+pa_eligible_parks_other_federal_share_nominal_usd,PA:federalShareObligated,Cumulative eligible federal share for this work category. Blank if no known contributing value; signed adjustments retained.,nominal USD,snapshot_response
+pa_eligible_parks_other_federal_share_nominal_usd_known_records,PA:federalShareObligated,Contributing records with a known value.,records,snapshot_response
+pa_eligible_parks_other_federal_share_nominal_usd_missing_records,PA:federalShareObligated,Contributing records whose value is blank.,records,snapshot_response
+pa_eligible_administration_records,PA:damageCategoryCode,"Eligible projects by work category, assigned once to declaration year.",records,snapshot_response
+pa_eligible_administration_federal_share_nominal_usd,PA:federalShareObligated,Cumulative eligible federal share for this work category. Blank if no known contributing value; signed adjustments retained.,nominal USD,snapshot_response
+pa_eligible_administration_federal_share_nominal_usd_known_records,PA:federalShareObligated,Contributing records with a known value.,records,snapshot_response
+pa_eligible_administration_federal_share_nominal_usd_missing_records,PA:federalShareObligated,Contributing records whose value is blank.,records,snapshot_response
+pa_eligible_building_codes_records,PA:damageCategoryCode,"Eligible projects by work category, assigned once to declaration year.",records,snapshot_response
+pa_eligible_building_codes_federal_share_nominal_usd,PA:federalShareObligated,Cumulative eligible federal share for this work category. Blank if no known contributing value; signed adjustments retained.,nominal USD,snapshot_response
+pa_eligible_building_codes_federal_share_nominal_usd_known_records,PA:federalShareObligated,Contributing records with a known value.,records,snapshot_response
+pa_eligible_building_codes_federal_share_nominal_usd_missing_records,PA:federalShareObligated,Contributing records whose value is blank.,records,snapshot_response
+pa_eligible_other_category_records,PA:damageCategoryCode,"Eligible projects by work category, assigned once to declaration year.",records,snapshot_response
+pa_eligible_other_category_federal_share_nominal_usd,PA:federalShareObligated,Cumulative eligible federal share for this work category. Blank if no known contributing value; signed adjustments retained.,nominal USD,snapshot_response
+pa_eligible_other_category_federal_share_nominal_usd_known_records,PA:federalShareObligated,Contributing records with a known value.,records,snapshot_response
+pa_eligible_other_category_federal_share_nominal_usd_missing_records,PA:federalShareObligated,Contributing records whose value is blank.,records,snapshot_response
+pa_status_counts,PA:projectStatus,JSON distribution of snapshot eligibility status.,,snapshot_response
+pa_process_step_counts,PA:projectProcessStep,JSON distribution of snapshot process stage.,,snapshot_response
+pa_negative_federal_share_records,PA:federalShareObligated,Eligible records with a negative adjustment.,records,snapshot_response
+hma_fy_records,HazardMitigationAssistanceProjects.csv,Snapshot records in program fiscal-year cohort; coverage counts may appear in multiple counties.,records,snapshot_response
+hma_fy_awarded_records,HazardMitigationAssistanceProjects.csv,Snapshot records in program fiscal-year cohort; coverage counts may appear in multiple counties.,records,snapshot_response
+hma_fy_pending_records,HazardMitigationAssistanceProjects.csv,Snapshot records in program fiscal-year cohort; coverage counts may appear in multiple counties.,records,snapshot_response
+hma_fy_closed_records,HazardMitigationAssistanceProjects.csv,Snapshot records in program fiscal-year cohort; coverage counts may appear in multiple counties.,records,snapshot_response
+hma_fy_not_awarded_records,HazardMitigationAssistanceProjects.csv,Snapshot records in program fiscal-year cohort; coverage counts may appear in multiple counties.,records,snapshot_response
+hma_fy_flood_related_records,HazardMitigationAssistanceProjects.csv,Snapshot records in program fiscal-year cohort; coverage counts may appear in multiple counties.,records,snapshot_response
+hma_fy_flood_awarded_records,HazardMitigationAssistanceProjects.csv,Snapshot records in program fiscal-year cohort; coverage counts may appear in multiple counties.,records,snapshot_response
+hma_fy_multicounty_coverage_records,HazardMitigationAssistanceProjects.csv,Snapshot records in program fiscal-year cohort; coverage counts may appear in multiple counties.,records,snapshot_response
+hma_fy_duplicate_business_identifier_records,HazardMitigationAssistanceProjects.csv,Snapshot records in program fiscal-year cohort; coverage counts may appear in multiple counties.,records,snapshot_response
+hma_fy_invalid_year_records,HazardMitigationAssistanceProjects.csv,Snapshot records in program fiscal-year cohort; coverage counts may appear in multiple counties.,records,snapshot_response
+hma_fy_invalid_chronology_records,HazardMitigationAssistanceProjects.csv,Snapshot records in program fiscal-year cohort; coverage counts may appear in multiple counties.,records,snapshot_response
+hma_fy_invalid_cost_share_records,HazardMitigationAssistanceProjects.csv,Snapshot records in program fiscal-year cohort; coverage counts may appear in multiple counties.,records,snapshot_response
+hma_fy_bcr_zero_records,HazardMitigationAssistanceProjects.csv,Snapshot records in program fiscal-year cohort; coverage counts may appear in multiple counties.,records,snapshot_response
+hma_fy_bcr_missing_records,HazardMitigationAssistanceProjects.csv,Snapshot records in program fiscal-year cohort; coverage counts may appear in multiple counties.,records,snapshot_response
+hma_fy_flood_with_pa_disaster_records,HazardMitigationAssistanceProjects.csv,Snapshot records in program fiscal-year cohort; coverage counts may appear in multiple counties.,records,snapshot_response
+hma_fy_flood_with_pa_same_county_records,HazardMitigationAssistanceProjects.csv,Snapshot records in program fiscal-year cohort; coverage counts may appear in multiple counties.,records,snapshot_response
+hma_fy_hmgp_records,HMA:programArea,Program fiscal-year cohort records in this county.,records,snapshot_response
+hma_fy_fma_records,HMA:programArea,Program fiscal-year cohort records in this county.,records,snapshot_response
+hma_fy_pdm_records,HMA:programArea,Program fiscal-year cohort records in this county.,records,snapshot_response
+hma_fy_lpdm_records,HMA:programArea,Program fiscal-year cohort records in this county.,records,snapshot_response
+hma_fy_bric_records,HMA:programArea,Program fiscal-year cohort records in this county.,records,snapshot_response
+hma_fy_srl_records,HMA:programArea,Program fiscal-year cohort records in this county.,records,snapshot_response
+hma_fy_rfc_records,HMA:programArea,Program fiscal-year cohort records in this county.,records,snapshot_response
+hma_fy_flood_awarded_acquisition_records,"HMA:projectType,status,programFy",Awarded flood-related fiscal-year cohort records with this activity; multiple activities and county coverage are non-additive.,records,snapshot_response
+hma_flood_first_approval_year_acquisition_records,"HMA:projectType,dateInitiallyApproved",Flood-related awarded records with this activity first approved in analysis_year; no substitute for a missing first approval year.,records,snapshot_response
+hma_fy_flood_awarded_relocation_records,"HMA:projectType,status,programFy",Awarded flood-related fiscal-year cohort records with this activity; multiple activities and county coverage are non-additive.,records,snapshot_response
+hma_flood_first_approval_year_relocation_records,"HMA:projectType,dateInitiallyApproved",Flood-related awarded records with this activity first approved in analysis_year; no substitute for a missing first approval year.,records,snapshot_response
+hma_fy_flood_awarded_elevation_records,"HMA:projectType,status,programFy",Awarded flood-related fiscal-year cohort records with this activity; multiple activities and county coverage are non-additive.,records,snapshot_response
+hma_flood_first_approval_year_elevation_records,"HMA:projectType,dateInitiallyApproved",Flood-related awarded records with this activity first approved in analysis_year; no substitute for a missing first approval year.,records,snapshot_response
+hma_fy_flood_awarded_floodproofing_records,"HMA:projectType,status,programFy",Awarded flood-related fiscal-year cohort records with this activity; multiple activities and county coverage are non-additive.,records,snapshot_response
+hma_flood_first_approval_year_floodproofing_records,"HMA:projectType,dateInitiallyApproved",Flood-related awarded records with this activity first approved in analysis_year; no substitute for a missing first approval year.,records,snapshot_response
+hma_fy_flood_awarded_drainage_records,"HMA:projectType,status,programFy",Awarded flood-related fiscal-year cohort records with this activity; multiple activities and county coverage are non-additive.,records,snapshot_response
+hma_flood_first_approval_year_drainage_records,"HMA:projectType,dateInitiallyApproved",Flood-related awarded records with this activity first approved in analysis_year; no substitute for a missing first approval year.,records,snapshot_response
+hma_fy_flood_awarded_flood_control_records,"HMA:projectType,status,programFy",Awarded flood-related fiscal-year cohort records with this activity; multiple activities and county coverage are non-additive.,records,snapshot_response
+hma_flood_first_approval_year_flood_control_records,"HMA:projectType,dateInitiallyApproved",Flood-related awarded records with this activity first approved in analysis_year; no substitute for a missing first approval year.,records,snapshot_response
+hma_fy_flood_awarded_restoration_records,"HMA:projectType,status,programFy",Awarded flood-related fiscal-year cohort records with this activity; multiple activities and county coverage are non-additive.,records,snapshot_response
+hma_flood_first_approval_year_restoration_records,"HMA:projectType,dateInitiallyApproved",Flood-related awarded records with this activity first approved in analysis_year; no substitute for a missing first approval year.,records,snapshot_response
+hma_fy_flood_awarded_infrastructure_records,"HMA:projectType,status,programFy",Awarded flood-related fiscal-year cohort records with this activity; multiple activities and county coverage are non-additive.,records,snapshot_response
+hma_flood_first_approval_year_infrastructure_records,"HMA:projectType,dateInitiallyApproved",Flood-related awarded records with this activity first approved in analysis_year; no substitute for a missing first approval year.,records,snapshot_response
+hma_fy_flood_awarded_singlecounty_project_cost_nominal_usd,HMA:projectAmount,"Flood-related awarded records in fiscal-year cohort; only single-county scope, no spatial cost allocation. Blank if no known contributing value; signed adjustments retained.",nominal USD,snapshot_response
+hma_fy_flood_awarded_singlecounty_project_cost_nominal_usd_known_records,HMA:projectAmount,Contributing records with a known value.,records,snapshot_response
+hma_fy_flood_awarded_singlecounty_project_cost_nominal_usd_missing_records,HMA:projectAmount,Contributing records whose value is blank.,records,snapshot_response
+hma_fy_flood_awarded_singlecounty_federal_share_obligated_nominal_usd,HMA:federalShareObligated,"Flood-related awarded records in fiscal-year cohort; only single-county scope, no spatial cost allocation. Blank if no known contributing value; signed adjustments retained.",nominal USD,snapshot_response
+hma_fy_flood_awarded_singlecounty_federal_share_obligated_nominal_usd_known_records,HMA:federalShareObligated,Contributing records with a known value.,records,snapshot_response
+hma_fy_flood_awarded_singlecounty_federal_share_obligated_nominal_usd_missing_records,HMA:federalShareObligated,Contributing records whose value is blank.,records,snapshot_response
+hma_fy_flood_awarded_singlecounty_subrecipient_admin_nominal_usd,HMA:subrecipientAdminCostAmt,"Flood-related awarded records in fiscal-year cohort; only single-county scope, no spatial cost allocation. Blank if no known contributing value; signed adjustments retained.",nominal USD,snapshot_response
+hma_fy_flood_awarded_singlecounty_subrecipient_admin_nominal_usd_known_records,HMA:subrecipientAdminCostAmt,Contributing records with a known value.,records,snapshot_response
+hma_fy_flood_awarded_singlecounty_subrecipient_admin_nominal_usd_missing_records,HMA:subrecipientAdminCostAmt,Contributing records whose value is blank.,records,snapshot_response
+hma_fy_flood_awarded_singlecounty_subrecipient_management_nominal_usd,HMA:srmcObligatedAmt,"Flood-related awarded records in fiscal-year cohort; only single-county scope, no spatial cost allocation. Blank if no known contributing value; signed adjustments retained.",nominal USD,snapshot_response
+hma_fy_flood_awarded_singlecounty_subrecipient_management_nominal_usd_known_records,HMA:srmcObligatedAmt,Contributing records with a known value.,records,snapshot_response
+hma_fy_flood_awarded_singlecounty_subrecipient_management_nominal_usd_missing_records,HMA:srmcObligatedAmt,Contributing records whose value is blank.,records,snapshot_response
+hma_fy_flood_awarded_singlecounty_recipient_admin_nominal_usd,HMA:recipientAdminCostAmt,"Flood-related awarded records in fiscal-year cohort; only single-county scope, no spatial cost allocation. Blank if no known contributing value; signed adjustments retained.",nominal USD,snapshot_response
+hma_fy_flood_awarded_singlecounty_recipient_admin_nominal_usd_known_records,HMA:recipientAdminCostAmt,Contributing records with a known value.,records,snapshot_response
+hma_fy_flood_awarded_singlecounty_recipient_admin_nominal_usd_missing_records,HMA:recipientAdminCostAmt,Contributing records whose value is blank.,records,snapshot_response
+hma_fy_flood_awarded_positive_bcr_median,HMA:benefitCostRatio,"Median of positive finite BCRs; zero, missing and outliers are not evidence of realized effectiveness.",,snapshot_response
+hma_fy_status_counts,HMA:status,JSON distribution of fiscal-year cohort snapshot statuses.,,snapshot_response
+hma_flood_first_approval_year_records,HMA:milestone dates,Flood-related awarded records whose recorded milestone YEAR equals analysis_year; stages must not be added together.,records,snapshot_response
+hma_flood_latest_approval_year_records,HMA:milestone dates,Flood-related awarded records whose recorded milestone YEAR equals analysis_year; stages must not be added together.,records,snapshot_response
+hma_flood_initial_obligation_year_records,HMA:milestone dates,Flood-related awarded records whose recorded milestone YEAR equals analysis_year; stages must not be added together.,records,snapshot_response
+hma_flood_closed_year_records,HMA:milestone dates,Flood-related awarded records whose recorded milestone YEAR equals analysis_year; stages must not be added together.,records,snapshot_response
+hma_flood_initial_obligation_year_singlecounty_nominal_usd,HMA:initialObligationAmount,"Initial obligation amount in its recorded calendar year, single-county scope only; not all obligations or payments. Blank if no known contributing value; signed adjustments retained.",nominal USD,snapshot_response
+hma_flood_initial_obligation_year_singlecounty_nominal_usd_known_records,HMA:initialObligationAmount,Contributing records with a known value.,records,snapshot_response
+hma_flood_initial_obligation_year_singlecounty_nominal_usd_missing_records,HMA:initialObligationAmount,Contributing records whose value is blank.,records,snapshot_response
+hma_flood_closed_before_year_records,"HMA:dateClosed,status",Flood-related closed records with closure YEAR strictly before analysis_year; includes pre-1999 history.,records,prior_mitigation_context
+hma_physical_flood_closed_before_year_records,"HMA:projectType,dateClosed",Prior-year closed records with an explicit physical flood measure; includes multiple activity projects.,records,prior_mitigation_context
+hma_acquisition_closed_before_year_records,"HMA:projectType,dateClosed",Prior closure-year project coverage with this activity; multiple activities are non-additive.,records,prior_mitigation_context
+hma_relocation_closed_before_year_records,"HMA:projectType,dateClosed",Prior closure-year project coverage with this activity; multiple activities are non-additive.,records,prior_mitigation_context
+hma_elevation_closed_before_year_records,"HMA:projectType,dateClosed",Prior closure-year project coverage with this activity; multiple activities are non-additive.,records,prior_mitigation_context
+hma_floodproofing_closed_before_year_records,"HMA:projectType,dateClosed",Prior closure-year project coverage with this activity; multiple activities are non-additive.,records,prior_mitigation_context
+hma_drainage_closed_before_year_records,"HMA:projectType,dateClosed",Prior closure-year project coverage with this activity; multiple activities are non-additive.,records,prior_mitigation_context
+hma_flood_control_closed_before_year_records,"HMA:projectType,dateClosed",Prior closure-year project coverage with this activity; multiple activities are non-additive.,records,prior_mitigation_context
+hma_restoration_closed_before_year_records,"HMA:projectType,dateClosed",Prior closure-year project coverage with this activity; multiple activities are non-additive.,records,prior_mitigation_context
+hma_infrastructure_closed_before_year_records,"HMA:projectType,dateClosed",Prior closure-year project coverage with this activity; multiple activities are non-additive.,records,prior_mitigation_context
+pa_county_year_record_observed,derived,"1 if matching source records observed; 0 means no matching records, not no government action.",indicator,observation_flag
+hma_fiscal_cohort_record_observed,derived,"1 if matching source records observed; 0 means no matching records, not no government action.",indicator,observation_flag
